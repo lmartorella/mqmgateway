@@ -19,19 +19,27 @@ class MsgMqttCommand {
 
 class MsgRegisterMessageBase {
     public:
-        MsgRegisterMessageBase(int slaveId, RegisterType regType, int registerNumber)
-            : mSlaveId(slaveId), mRegisterType(regType), mRegisterNumber(registerNumber) {}
+        MsgRegisterMessageBase(int slaveId, RegisterType regType, int registerAddress)
+            : mSlaveId(slaveId), mRegisterType(regType), mRegisterAddress(registerAddress) {}
         int mSlaveId;
         RegisterType mRegisterType;
-        int mRegisterNumber;
+        int mRegisterAddress;
 };
 
 class MsgRegisterValue : public MsgRegisterMessageBase {
     public:
-        MsgRegisterValue(int slaveId, RegisterType regType, int registerNumber, int16_t value)
-            : MsgRegisterMessageBase(slaveId, regType, registerNumber),
+        MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, int16_t value)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress),
               mValue(value) {}
         int16_t mValue;
+};
+
+class MsgRegisterRangeValues : public MsgRegisterMessageBase {
+    public:
+        MsgRegisterRangeValues(int slaveId, RegisterType regType, int registerAddress, int registerCount, const std::vector<int16_t>& values)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress),
+              mValues(values) {}
+        std::vector<int16_t> mValues;
 };
 
 class MsgRegisterReadFailed : public MsgRegisterMessageBase {

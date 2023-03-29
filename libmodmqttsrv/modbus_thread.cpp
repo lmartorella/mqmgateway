@@ -120,7 +120,7 @@ ModbusThread::processWrite(const MsgRegisterValue& msg) {
         //are polling this register
         std::map<int, std::vector<std::shared_ptr<RegisterPoll>>>::iterator slave = mRegisters.find(msg.mSlaveId);
         if (slave != mRegisters.end()) {
-            int regNumber = msg.mRegisterNumber;
+            int regNumber = msg.mRegisterAddress;
             std::vector<std::shared_ptr<RegisterPoll>>::iterator reg_it = std::find_if(
                 slave->second.begin(), slave->second.end(),
                 [&regNumber](const std::shared_ptr<RegisterPoll>& item) -> bool { return regNumber == item->mRegister; }
@@ -129,14 +129,14 @@ ModbusThread::processWrite(const MsgRegisterValue& msg) {
                 RegisterPoll& reg = **reg_it;
                 reg.mLastValue = msg.mValue;
                 reg.mLastRead = std::chrono::steady_clock::now();
-                MsgRegisterValue val(msg.mSlaveId, msg.mRegisterType, msg.mRegisterNumber, msg.mValue);
+                MsgRegisterValue val(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mValue);
                 sendMessage(QueueItem::create(val));
             }
         }
     } catch (const ModbusWriteException& ex) {
         BOOST_LOG_SEV(log, Log::error) << "error writing register "
-            << msg.mSlaveId << "." << msg.mRegisterNumber << ": " << ex.what();
-        MsgRegisterWriteFailed msg(msg.mSlaveId, msg.mRegisterType, msg.mRegisterNumber);
+            << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
+        MsgRegisterWriteFailed msg(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress);
         sendMessage(QueueItem::create(msg));
     }
 }
