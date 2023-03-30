@@ -7,6 +7,7 @@
 
 #include "libmodmqttsrv/imqttimpl.hpp"
 #include "libmodmqttsrv/logging.hpp"
+#include "libmodmqttsrv/mqttobject.hpp"
 
 class MockedMqttException : public modmqttd::ModMqttException {
     public:
@@ -52,6 +53,7 @@ class MockedMqttImpl : public modmqttd::IMqttImpl {
 
         virtual void subscribe(const char* topic);
         virtual void publish(const char* topic, int len, const void* data);
+        void publish(const char* topic, int len, const void* data, modmqttd::MqttObjectCommand::PayloadType payloadType);
 
         virtual void on_disconnect(int rc);
         virtual void on_connect(int rc);

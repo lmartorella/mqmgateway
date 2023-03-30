@@ -12,6 +12,16 @@ const std::chrono::milliseconds MockedModbusContext::sDefaultSlaveWriteTime = st
 
 void
 MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool internalOperation) {
+    write(msg, { msg.mValue }, internalOperation);
+}
+
+void
+MockedModbusContext::Slave::write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation) {
+    write(msg, msg.mValues, internalOperation);
+}
+
+void
+MockedModbusContext::Slave::write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation) {
     if (!internalOperation) {
         std::this_thread::sleep_for(mWriteTime);
         if (mDisconnected) {
@@ -23,27 +33,25 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool in
             throw modmqttd::ModbusReadException(std::string("register write fn ") + std::to_string(msg.mRegisterAddress) + " failed");
         }
     }
-    switch(msg.mRegisterType) {
-        case modmqttd::RegisterType::COIL:
-            mCoil[msg.mRegisterAddress].mValue = msg.mValue == 1;
-        break;
-        case modmqttd::RegisterType::BIT:
-            mBit[msg.mRegisterAddress].mValue = msg.mValue == 1;
-        break;
-        case modmqttd::RegisterType::HOLDING:
-            mHolding[msg.mRegisterAddress].mValue = msg.mValue;
-        break;
-        case modmqttd::RegisterType::INPUT:
-            mInput[msg.mRegisterAddress].mValue = msg.mValue;
-        break;
-        default:
-            throw modmqttd::ModbusWriteException(std::string("Cannot write, unknown register type ") + std::to_string(msg.mRegisterType));
-    };
-}
-
-void
-MockedModbusContext::Slave::write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation) {
-    throw std::runtime_error("Not implemented");
+    int regAddress = msg.mRegisterAddress;
+    for (auto it = values.begin(); it != values.end(); ++it, ++regAddress) {
+        switch(msg.mRegisterType) {
+            case modmqttd::RegisterType::COIL:
+                mCoil[regAddress].mValue = *it == 1;
+            break;
+            case modmqttd::RegisterType::BIT:
+                mBit[regAddress].mValue = *it == 1;
+            break;
+            case modmqttd::RegisterType::HOLDING:
+                mHolding[regAddress].mValue = *it;
+            break;
+            case modmqttd::RegisterType::INPUT:
+                mInput[regAddress].mValue = *it;
+            break;
+            default:
+                throw modmqttd::ModbusWriteException(std::string("Cannot write, unknown register type ") + std::to_string(msg.mRegisterType));
+        };
+    }
 }
 
 uint16_t

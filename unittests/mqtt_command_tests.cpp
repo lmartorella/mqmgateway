@@ -85,7 +85,6 @@ TEST_CASE ("Mqtt binary range value should not be permitted if not configured") 
     server.waitForPublish("test_switch/state", REGWAIT_MSEC);
 
     server.publishBuffer("test_switch/set", { 43, 44 });
-    server.waitForPublish("test_switch/state", REGWAIT_MSEC);
     REQUIRE(server.mqttValue("test_switch/state") == "42");
 
     server.stop();
@@ -102,12 +101,12 @@ mqtt:
   broker:
     host: localhost
   objects:
-    - topic: some/subpath/test_switch
+    - topic: test_switch
       commands:
         - name: set
           register: tcptest.1.2
           register_type: holding
-          range: true
+          payload_type: binary
       state:
         register: tcptest.1.2
         register_type: holding
@@ -121,11 +120,14 @@ TEST_CASE ("Mqtt binary range value should work if configured") {
     REQUIRE(server.mqttValue("test_switch/availability") == "1");
     server.waitForPublish("test_switch/state", REGWAIT_MSEC);
 
-    server.publishBuffer("test_switch/set", { 43, 44 });
+    // Little endian
+    server.publishBuffer("test_switch/set", { 43, 0, 44, 1 });
     server.waitForPublish("test_switch/state", REGWAIT_MSEC);
+    // For compatibility, the state is still one register
     REQUIRE(server.mqttValue("test_switch/state") == "43");
+    // But the writing impacted two registers
     REQUIRE(server.getModbusRegisterValue("tcptest", 1, 2, modmqttd::RegisterType::HOLDING) == 43);
-    REQUIRE(server.getModbusRegisterValue("tcptest", 1, 3, modmqttd::RegisterType::HOLDING) == 44);
+    REQUIRE(server.getModbusRegisterValue("tcptest", 1, 3, modmqttd::RegisterType::HOLDING) == 256 + 44);
 
     server.stop();
 }

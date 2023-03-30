@@ -28,18 +28,18 @@ class MsgRegisterMessageBase {
 
 class MsgRegisterValue : public MsgRegisterMessageBase {
     public:
-        MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, int16_t value)
+        MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, uint16_t value)
             : MsgRegisterMessageBase(slaveId, regType, registerAddress),
               mValue(value) {}
-        int16_t mValue;
+        uint16_t mValue;
 };
 
 class MsgRegisterRangeValues : public MsgRegisterMessageBase {
     public:
-        MsgRegisterRangeValues(int slaveId, RegisterType regType, int registerAddress, int registerCount, const std::vector<int16_t>& values)
+        MsgRegisterRangeValues(int slaveId, RegisterType regType, int registerAddress, const std::vector<uint16_t>& values)
             : MsgRegisterMessageBase(slaveId, regType, registerAddress),
               mValues(values) {}
-        std::vector<int16_t> mValues;
+        std::vector<uint16_t> mValues;
 };
 
 class MsgRegisterReadFailed : public MsgRegisterMessageBase {

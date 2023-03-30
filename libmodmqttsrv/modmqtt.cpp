@@ -68,11 +68,11 @@ class RegisterConfigName {
                 throw ConfigurationException(data["register"].Mark(), "Unknown slave id in register specification");
             }
 
-            mRegisterNumber = std::stoi(matches[3], nullptr, 0);
+            mRegisterAddress = std::stoi(matches[3], nullptr, 0);
         };
         std::string mNetworkName;
         int mSlaveId = 0;
-        int mRegisterNumber;
+        int mRegisterAddress;
 };
 
 void
@@ -104,6 +104,8 @@ parsePayloadType(const YAML::Node& data) {
     ConfigTools::readOptionalValue<std::string>(ptype, data, "payload_type");
     if (ptype == "string")
         return MqttObjectCommand::PayloadType::STRING;
+    if (ptype == "binary")
+        return MqttObjectCommand::PayloadType::BINARY;
     throw ConfigurationException(data.Mark(), std::string("Unknown payload type ") + ptype);
 }
 
@@ -119,7 +121,7 @@ readCommand(const YAML::Node& node, const std::string& default_network, int defa
             rname.mNetworkName,
             rname.mSlaveId,
             rType,
-            rname.mRegisterNumber
+            rname.mRegisterAddress
             ),
         pType
     );
@@ -534,7 +536,7 @@ ModMqtt::updateSpecification(
     bool hasRefresh = parseAndAddRefresh(currentRefresh, data);
 
     MsgRegisterPoll poll;
-    poll.mRegister = rname.mRegisterNumber;
+    poll.mRegister = rname.mRegisterAddress;
     poll.mRegisterType = parseRegisterType(data);
     poll.mSlaveId = rname.mSlaveId;
     poll.mRefreshMsec = currentRefresh.top();
@@ -555,7 +557,7 @@ ModMqtt::updateSpecification(
     std::vector<MsgRegisterPoll>::iterator reg_it = std::find_if(
         spec_it->mRegisters.begin(), spec_it->mRegisters.end(),
         [&rname, &poll](const MsgRegisterPoll& r) -> bool {
-            return r.mRegister == rname.mRegisterNumber
+            return r.mRegister == rname.mRegisterAddress
                     && r.mRegisterType == poll.mRegisterType
                     && r.mSlaveId == poll.mSlaveId;
             }

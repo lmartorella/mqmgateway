@@ -34,10 +34,10 @@ static void on_publish_wrapper(struct mosquitto *mosq, void *userdata, int mid)
 }
 */
 
-static void on_message_wrapper(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
+static void on_message_wrapper(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message, const mosquitto_property *props)
 {
 	class Mosquitto *m = (class Mosquitto *)userdata;
-	m->on_message(message);
+	m->on_message(message, props);
 }
 
 /*
@@ -113,7 +113,7 @@ Mosquitto::connect(const MqttBrokerConfig& config) {
         mosquitto_connect_with_flags_callback_set(mMosq, on_connect_with_flags_wrapper);
         mosquitto_disconnect_callback_set(mMosq, on_disconnect_wrapper);
         //mosquitto_publish_callback_set(mMosq, on_publish_wrapper);
-        mosquitto_message_callback_set(mMosq, on_message_wrapper);
+        mosquitto_message_v5_callback_set(mMosq, on_message_wrapper);
         //mosquitto_subscribe_callback_set(mMosq, on_subscribe_wrapper);
         //mosquitto_unsubscribe_callback_set(mMosq, on_unsubscribe_wrapper);
         mosquitto_log_callback_set(mMosq, on_log_wrapper);
@@ -195,8 +195,18 @@ Mosquitto::on_log(int level, const char* message) {
 }
 
 void
-Mosquitto::on_message(const struct mosquitto_message *message) {
-    mOwner->onMessage(message->topic, message->payload, message->payloadlen);
+Mosquitto::on_message(const struct mosquitto_message *message, const mosquitto_property *props) {
+    // Only there for v5 protocol
+    MqttObjectCommand::PayloadType payloadType = MqttObjectCommand::PayloadType::UNKNOWN;
+    if (props != nullptr) {
+        char *contentType = nullptr;
+        if (mosquitto_property_read_string(props, MQTT_PROP_CONTENT_TYPE, &contentType, false)) {
+            if (std::string(contentType) != "application/octet-stream") {
+                payloadType = MqttObjectCommand::PayloadType::BINARY;
+            }
+        }
+    }
+    mOwner->onMessage(message->topic, message->payload, message->payloadlen, payloadType);
 }
 
 const char*

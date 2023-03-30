@@ -91,7 +91,7 @@ class MockedModMqttServerThread : public ModMqttServerThread {
     }
 
     void publishBuffer(const char* topic, const std::vector<uint8_t>& data) {
-        throw std::runtime_error("Not implemented");
+        mMqtt->publish(topic, data.size(), &data[0], modmqttd::MqttObjectCommand::PayloadType::BINARY);
     }
 
     void waitForMqttValue(const char* topic, const char* expected, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {

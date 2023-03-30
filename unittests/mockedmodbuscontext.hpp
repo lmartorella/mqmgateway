@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "libmodmqttsrv/imodbuscontext.hpp"
+#include "libmodmqttsrv/modbus_messages.hpp"
 #include "libmodmqttsrv/modbus_types.hpp"
 #include "libmodmqttsrv/logging.hpp"
 
@@ -23,6 +24,7 @@ class MockedModbusContext : public modmqttd::IModbusContext {
                 Slave(int id = 0) : mId(id) {}
                 void write(const modmqttd::MsgRegisterValue& msg, bool internalOperation = false);
                 void write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation = false);
+                void write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation = false);
                 uint16_t read(const modmqttd::BaseRegisterInfo& regData, bool internalOperation = false);
 
                 void setDisconnected(bool flag = true) { mDisconnected = flag; }

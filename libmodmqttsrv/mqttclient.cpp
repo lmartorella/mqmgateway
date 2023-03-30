@@ -189,9 +189,9 @@ MqttClient::publishAll() {
 
 static const int MAX_DATA_LEN = 32;
 
-uint16_t
+std::vector<uint16_t>
 convertMqttPayload(const MqttObjectCommand& command, const void* data, int datalen) {
-    uint16_t ret(0);
+    std::vector<uint16_t> ret(1);
     if (datalen > MAX_DATA_LEN)
         throw MqttPayloadConversionException(std::string("Conversion failed, payload too big (size:") + std::to_string(datalen) + ")");
 
@@ -201,7 +201,7 @@ convertMqttPayload(const MqttObjectCommand& command, const void* data, int datal
             try {
                 int temp(std::stoi(value.c_str()));
                 if (temp <= static_cast<int>(UINT16_MAX) && temp >=0) {
-                    ret = static_cast<uint16_t>(temp);
+                    ret[0] = static_cast<uint16_t>(temp);
                 } else {
                     throw MqttPayloadConversionException(std::string("Conversion failed, value " + std::to_string(temp) + " out of range"));
                 }
@@ -211,6 +211,13 @@ convertMqttPayload(const MqttObjectCommand& command, const void* data, int datal
                 throw MqttPayloadConversionException("mqtt value if out of range");
             }
         } break;
+        case MqttObjectCommand::PayloadType::BINARY: {
+            if (datalen < sizeof(uint16_t) || (datalen % sizeof(uint16_t)) != 0) {
+                throw MqttPayloadConversionException("mqtt buffer underrun");
+            }
+            const uint16_t* buffer = reinterpret_cast<const uint16_t*>(data);
+            ret = std::vector<uint16_t>(buffer, buffer + datalen / sizeof(uint16_t));
+        } break;
         default:
           throw MqttPayloadConversionException("Conversion failed, unknown payload type" + std::to_string(command.mPayloadType));
     }
@@ -218,8 +225,10 @@ convertMqttPayload(const MqttObjectCommand& command, const void* data, int datal
     switch(command.mRegister.mRegisterType) {
         case RegisterType::BIT:
         case RegisterType::COIL:
-            if ((ret != 0) && (ret != 1)) {
-                throw MqttPayloadConversionException(std::string("Conversion failed, cannot convert " + std::to_string(ret) + " to single bit"));
+            for (auto it = ret.begin(); it != ret.end(); ++it) {
+                if ((*it != 0) && (*it != 1)) {
+                    throw MqttPayloadConversionException(std::string("Conversion failed, cannot convert " + std::to_string(*it) + " to single bit"));
+                }
             }
         break;
     }
@@ -227,9 +236,9 @@ convertMqttPayload(const MqttObjectCommand& command, const void* data, int datal
 }
 
 void
-MqttClient::onMessage(const char* topic, const void* payload, int payloadlen) {
+MqttClient::onMessage(const char* topic, const void* payload, int payloadlen, MqttObjectCommand::PayloadType payloadType) {
     try {
-        const MqttObjectCommand& command = findCommand(topic);
+        const MqttObjectCommand& command = findCommand(topic, payloadType);
         const std::string network = command.mRegister.mNetworkName;
 
         //TODO is is thread safe to iterate on modbus clients from mosquitto callback?
@@ -240,8 +249,12 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadlen) {
         if (it == mModbusClients.end()) {
             BOOST_LOG_SEV(log, Log::error) << "Modbus network " << network << " not found for command  " << topic << ", dropping message";
         } else {
-            uint16_t value = convertMqttPayload(command, payload, payloadlen);
-            (*it)->sendCommand(command, value);
+            std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadlen);
+            if (value.size() > 1) {
+                (*it)->sendCommand(command, value);
+            } else {
+                (*it)->sendCommand(command, value[0]);
+            }
         }
     } catch (const MqttPayloadConversionException& ex) {
         BOOST_LOG_SEV(log, Log::error) << "Value error for " << topic << ":" << ex.what();
@@ -251,7 +264,7 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadlen) {
 }
 
 const MqttObjectCommand&
-MqttClient::findCommand(const char* topic) const {
+MqttClient::findCommand(const char* topic, MqttObjectCommand::PayloadType payloadType) const {
     std::string objectName;
     std::string commandName;
     const char *ptr = strrchr(topic, '/');
@@ -263,7 +276,6 @@ MqttClient::findCommand(const char* topic) const {
         objectName = topic;
     }
 
-
     std::vector<MqttObject>::const_iterator obj = std::find_if(
         mObjects.begin(), mObjects.end(),
         [&objectName](const MqttObject& item) -> bool { return item.getTopic() == objectName; }
@@ -273,8 +285,12 @@ MqttClient::findCommand(const char* topic) const {
             obj->mCommands.begin(), obj->mCommands.end(),
             [&commandName](const MqttObjectCommand& item) -> bool { return item.mName == commandName; }
         );
-        if (cmd != obj->mCommands.end())
+        if (cmd != obj->mCommands.end()) {
+            if (payloadType != MqttObjectCommand::PayloadType::UNKNOWN && cmd->mPayloadType != payloadType) {
+                throw MqttPayloadConversionException(topic);
+            }
             return *cmd;
+        }
     }
     throw ObjectCommandNotFoundException(topic);
 }

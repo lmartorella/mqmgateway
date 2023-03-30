@@ -1,5 +1,6 @@
 #include "mockedmqttimpl.hpp"
 #include "libmodmqttsrv/mqttclient.hpp"
+#include "libmodmqttsrv/mqttobject.hpp"
 
 void
 MockedMqttImpl::init(modmqttd::MqttClient* owner, const char* clientId) {
@@ -34,12 +35,17 @@ MockedMqttImpl::subscribe(const char* topic) {
 
 void
 MockedMqttImpl::publish(const char* topic, int len, const void* data) {
+    publish(topic, len, data, modmqttd::MqttObjectCommand::PayloadType::UNKNOWN);
+}
+
+void
+MockedMqttImpl::publish(const char* topic, int len, const void* data, modmqttd::MqttObjectCommand::PayloadType payloadType) {
     std::unique_lock<std::mutex> lck(mMutex);
     MqttValue v(data, len);
     mTopics[topic] = v;
     std::set<std::string>::const_iterator it = mSubscriptions.find(topic);
     if (it != mSubscriptions.end()) {
-        mOwner->onMessage(topic, data, len);
+        mOwner->onMessage(topic, data, len, payloadType);
     }
     BOOST_LOG_SEV(log, modmqttd::Log::info) << "PUBLISH " << topic << ": <" << v.val << ">";
     mPublishedTopics.insert(std::make_pair(topic, mPublishedTopics.size() + 1));

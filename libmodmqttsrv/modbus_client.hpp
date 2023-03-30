@@ -27,7 +27,17 @@ class ModbusClient {
             MsgRegisterValue val(
                 cmd.mRegister.mSlaveId,
                 cmd.mRegister.mRegisterType,
-                cmd.mRegister.mRegisterNumber,
+                cmd.mRegister.mRegisterAddress,
+                value
+            );
+            mToModbusQueue.enqueue(QueueItem::create(val));
+        }
+
+        void sendCommand(const MqttObjectCommand& cmd, const std::vector<uint16_t>& value) {
+            MsgRegisterRangeValues val(
+                cmd.mRegister.mSlaveId,
+                cmd.mRegister.mRegisterType,
+                cmd.mRegister.mRegisterAddress,
                 value
             );
             mToModbusQueue.enqueue(QueueItem::create(val));

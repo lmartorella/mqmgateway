@@ -116,28 +116,46 @@ void
 ModbusThread::processWrite(const MsgRegisterValue& msg) {
     try {
         mModbus->writeModbusRegister(msg);
-        //send state change immediately if we
-        //are polling this register
-        std::map<int, std::vector<std::shared_ptr<RegisterPoll>>>::iterator slave = mRegisters.find(msg.mSlaveId);
-        if (slave != mRegisters.end()) {
-            int regNumber = msg.mRegisterAddress;
-            std::vector<std::shared_ptr<RegisterPoll>>::iterator reg_it = std::find_if(
-                slave->second.begin(), slave->second.end(),
-                [&regNumber](const std::shared_ptr<RegisterPoll>& item) -> bool { return regNumber == item->mRegister; }
-            );
-            if (reg_it != slave->second.end()) {
-                RegisterPoll& reg = **reg_it;
-                reg.mLastValue = msg.mValue;
-                reg.mLastRead = std::chrono::steady_clock::now();
-                MsgRegisterValue val(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mValue);
-                sendMessage(QueueItem::create(val));
-            }
-        }
+        sendStateChange(msg, msg.mValue);
     } catch (const ModbusWriteException& ex) {
         BOOST_LOG_SEV(log, Log::error) << "error writing register "
             << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
         MsgRegisterWriteFailed msg(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress);
         sendMessage(QueueItem::create(msg));
+    }
+}
+
+void
+ModbusThread::processWrite(const MsgRegisterRangeValues& msg) {
+    try {
+        mModbus->writeModbusRegisters(msg);
+        sendStateChange(msg, msg.mValues[0]);
+    } catch (const ModbusWriteException& ex) {
+        BOOST_LOG_SEV(log, Log::error) << "error writing registers "
+            << msg.mSlaveId << "." << msg.mRegisterAddress << "[" << msg.mValues.size() << "]: " << ex.what();
+        MsgRegisterWriteFailed msg(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress);
+        sendMessage(QueueItem::create(msg));
+    }
+}
+
+void
+ModbusThread::sendStateChange(const MsgRegisterMessageBase& msg, uint16_t stateValue) {
+    //send state change immediately if we
+    //are polling this register
+    std::map<int, std::vector<std::shared_ptr<RegisterPoll>>>::iterator slave = mRegisters.find(msg.mSlaveId);
+    if (slave != mRegisters.end()) {
+        int regNumber = msg.mRegisterAddress;
+        std::vector<std::shared_ptr<RegisterPoll>>::iterator reg_it = std::find_if(
+            slave->second.begin(), slave->second.end(),
+            [&regNumber](const std::shared_ptr<RegisterPoll>& item) -> bool { return regNumber == item->mRegister; }
+        );
+        if (reg_it != slave->second.end()) {
+            RegisterPoll& reg = **reg_it;
+            reg.mLastValue = stateValue;
+            reg.mLastRead = std::chrono::steady_clock::now();
+            MsgRegisterValue val(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, stateValue);
+            sendMessage(QueueItem::create(val));
+        }
     }
 }
 
@@ -158,6 +176,8 @@ ModbusThread::dispatchMessages(const QueueItem& readed) {
             mShouldRun = false;
         } else if (item.isSameAs(typeid(MsgRegisterValue))) {
             processWrite(*item.getData<MsgRegisterValue>());
+        } else if (item.isSameAs(typeid(MsgRegisterRangeValues))) {
+            processWrite(*item.getData<MsgRegisterRangeValues>());
         } else if (item.isSameAs(typeid(MsgMqttNetworkState))) {
             std::unique_ptr<MsgMqttNetworkState> netstate(item.getData<MsgMqttNetworkState>());
             mShouldPoll = netstate->mIsUp;
