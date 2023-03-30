@@ -79,6 +79,11 @@ ModbusContext::readModbusRegister(int slaveId, const BaseRegisterInfo& regData) 
     return value;
 }
 
+std::vector<uint16_t>
+ModbusContext::readModbusRegisters(int slaveId, const BaseRegisterInfo& regData, int count) {
+    throw std::runtime_error("Not implemented");
+}
+
 void
 ModbusContext::writeModbusRegister(const MsgRegisterValue& msg) {
     if (msg.mSlaveId != 0)
@@ -99,6 +104,11 @@ ModbusContext::writeModbusRegister(const MsgRegisterValue& msg) {
     }
     if (retCode == -1)
         throw ModbusWriteException(std::string("write fn ") + std::to_string(msg.mRegisterAddress) + " failed");
+}
+
+void
+ModbusContext::writeModbusRegisters(const MsgRegisterRangeValues& msg) {
+    throw std::runtime_error("Not implemented");
 }
 
 } //namespace

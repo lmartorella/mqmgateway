@@ -41,6 +41,11 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool in
     };
 }
 
+void
+MockedModbusContext::Slave::write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation) {
+    throw std::runtime_error("Not implemented");
+}
+
 uint16_t
 MockedModbusContext::Slave::read(const modmqttd::BaseRegisterInfo& regData, bool internalOperation) {
     if (!internalOperation) {
@@ -145,6 +150,11 @@ MockedModbusContext::readModbusRegister(int slaveId, const modmqttd::BaseRegiste
     return ret;
 }
 
+std::vector<uint16_t>
+MockedModbusContext::readModbusRegisters(int slaveId, const modmqttd::BaseRegisterInfo& regData, int count) {
+    throw std::runtime_error("Not implemented");
+}
+
 void
 MockedModbusContext::init(const modmqttd::ModbusNetworkConfig& config) {
     mNetworkName = config.mName;
@@ -159,6 +169,24 @@ MockedModbusContext::writeModbusRegister(const modmqttd::MsgRegisterValue& msg) 
         BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
             << "." << it->second.mId << "." << msg.mRegisterAddress
             << " WRITE: " << msg.mValue;
+    it->second.write(msg, mInternalOperation);
+    mInternalOperation = false;
+}
+
+void
+MockedModbusContext::writeModbusRegisters(const modmqttd::MsgRegisterRangeValues& msg) {
+    std::unique_lock<std::mutex> lck(mMutex);
+    std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
+
+    if (mInternalOperation) {
+        std::stringstream str;
+        for (auto it = msg.mValues.begin(); it != msg.mValues.end(); ++it) {
+            str << (*it) << ", ";
+        }
+        BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
+            << "." << it->second.mId << "." << msg.mRegisterAddress
+            << " WRITE: [" << str.str() << "]";
+    }
     it->second.write(msg, mInternalOperation);
     mInternalOperation = false;
 }
@@ -193,6 +221,14 @@ MockedModbusFactory::getOrCreateContext(const char* network) {
         ctx = it->second;
     }
     return ctx;
+}
+
+uint16_t
+MockedModbusFactory::getModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype) {
+    std::shared_ptr<MockedModbusContext> ctx = getOrCreateContext(network);
+    modmqttd::BaseRegisterInfo msg(regNum, regtype);
+    ctx->mInternalOperation = true;
+    return ctx->readModbusRegister(slaveId, msg);
 }
 
 void

@@ -22,6 +22,7 @@ class MockedModbusContext : public modmqttd::IModbusContext {
             public:
                 Slave(int id = 0) : mId(id) {}
                 void write(const modmqttd::MsgRegisterValue& msg, bool internalOperation = false);
+                void write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation = false);
                 uint16_t read(const modmqttd::BaseRegisterInfo& regData, bool internalOperation = false);
 
                 void setDisconnected(bool flag = true) { mDisconnected = flag; }
@@ -82,6 +83,7 @@ class MockedModbusFactory : public modmqttd::IModbusFactory {
             return ctx;
         };
 
+        uint16_t getModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype);
         void setModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype, uint16_t val);
         void setModbusRegisterReadError(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype);
         void disconnectModbusSlave(const char* network, int slaveId);

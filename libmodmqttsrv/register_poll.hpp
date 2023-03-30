@@ -9,10 +9,9 @@ namespace modmqttd {
  * Base Modbus register address info
  * */
 class BaseRegisterInfo {
-    protected:
+    public:
         BaseRegisterInfo(int regNum, RegisterType regType) 
             :mRegister(regNum), mRegisterType(regType) { }
-    public:
         int mRegister;
         RegisterType mRegisterType;
 };

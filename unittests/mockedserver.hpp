@@ -90,6 +90,10 @@ class MockedModMqttServerThread : public ModMqttServerThread {
         mMqtt->publish(topic, value.length(), value.c_str());
     }
 
+    void publishBuffer(const char* topic, const std::vector<uint8_t>& data) {
+        throw std::runtime_error("Not implemented");
+    }
+
     void waitForMqttValue(const char* topic, const char* expected, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
         std::string current  = mMqtt->waitForMqttValue(topic, expected, timeout);
         REQUIRE(current == expected);
@@ -103,6 +107,10 @@ class MockedModMqttServerThread : public ModMqttServerThread {
 
     void setModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype, uint16_t val) {
         mModbusFactory->setModbusRegisterValue(network, slaveId, regNum, regtype, val);
+    }
+
+    uint16_t getModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype) {
+        return mModbusFactory->getModbusRegisterValue(network, slaveId, regNum, regtype);
     }
 
     void disconnectModbusSlave(const char* network, int slaveId) {
