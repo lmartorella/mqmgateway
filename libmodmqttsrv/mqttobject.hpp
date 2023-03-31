@@ -48,11 +48,12 @@ class MqttObjectCommand {
             STRING = 1,
             BINARY = 2
         };
-        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, PayloadType ptype)
-            : mName(name), mRegister(ident), mPayloadType(ptype) {}
+        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, PayloadType ptype, int size)
+            : mName(name), mRegister(ident), mPayloadType(ptype), mSize(size) {}
         std::string mName;
         PayloadType mPayloadType;
         MqttObjectRegisterIdent mRegister;
+        int mSize;
 };
 
 class MqttObjectRegisterValue {

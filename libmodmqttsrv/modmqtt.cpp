@@ -115,6 +115,8 @@ readCommand(const YAML::Node& node, const std::string& default_network, int defa
     RegisterConfigName rname(node, default_network, default_slave);
     RegisterType rType = parseRegisterType(node);
     MqttObjectCommand::PayloadType pType = parsePayloadType(node);
+    int size;
+    ConfigTools::readOptionalValue<int>(size, node, "size");
     return MqttObjectCommand(
         name,
         MqttObjectRegisterIdent(
@@ -123,7 +125,8 @@ readCommand(const YAML::Node& node, const std::string& default_network, int defa
             rType,
             rname.mRegisterAddress
             ),
-        pType
+        pType,
+        size
     );
 }
 

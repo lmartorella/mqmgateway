@@ -217,6 +217,9 @@ convertMqttPayload(const MqttObjectCommand& command, const void* data, int datal
             }
             const uint16_t* buffer = reinterpret_cast<const uint16_t*>(data);
             ret = std::vector<uint16_t>(buffer, buffer + datalen / sizeof(uint16_t));
+            if (ret.size() > command.mSize) {
+                throw MqttPayloadConversionException("mqtt buffer overrun" + std::to_string(command.mPayloadType));
+            }
         } break;
         default:
           throw MqttPayloadConversionException("Conversion failed, unknown payload type" + std::to_string(command.mPayloadType));

@@ -73,10 +73,9 @@ class MockedModMqttServerThread : public ModMqttServerThread {
             mServer.addConverterPath("../exprconv");
         };
 
-    void waitForPublish(const char* topic, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
+    bool checkForPublish(const char* topic, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
         INFO("Checking for publish on " << topic);
-        bool is_published = mMqtt->waitForPublish(topic, timeout);
-        REQUIRE(is_published == true);
+        return mMqtt->waitForPublish(topic, timeout);
     }
 
     std::string waitForFirstPublish(std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
@@ -124,3 +123,5 @@ class MockedModMqttServerThread : public ModMqttServerThread {
     std::shared_ptr<MockedModbusFactory> mModbusFactory;
     std::shared_ptr<MockedMqttImpl> mMqtt;
 };
+
+#define waitForPublish(server, topic, timeout) REQUIRE(server.checkForPublish(topic, timeout) == true)
