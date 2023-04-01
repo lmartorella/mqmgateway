@@ -27,6 +27,7 @@ class Mosquitto : public IMqttImpl {
 
         virtual void subscribe(const char* topic);
         virtual void publish(const char* topic, int len, const void* data);
+        virtual void publish(const char* topic, int len, const void* data, const MqttPublishProps& md);
 
         virtual void on_disconnect(int rc);
         virtual void on_connect(int rc);

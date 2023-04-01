@@ -39,6 +39,11 @@ MockedMqttImpl::publish(const char* topic, int len, const void* data) {
 }
 
 void
+MockedMqttImpl::publish(const char* topic, int len, const void* data, const modmqttd::MqttPublishProps& md) {
+    publish(topic, len, data, modmqttd::MqttObjectCommand::PayloadType::UNKNOWN);
+}
+
+void
 MockedMqttImpl::publish(const char* topic, int len, const void* data, modmqttd::MqttObjectCommand::PayloadType payloadType) {
     std::unique_lock<std::mutex> lck(mMutex);
     MqttValue v(data, len);

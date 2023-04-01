@@ -1,8 +1,9 @@
 #pragma once
 
-#include <string>
-#include <map>
 #include <iostream>
+#include <map>
+#include <string>
+#include <vector>
 
 #include <yaml-cpp/yaml.h>
 
@@ -164,6 +165,13 @@ class MqttObject {
         AvailableFlag mIsAvailable = AvailableFlag::NotSet;
 
         void updateAvailablityFlag();
+};
+
+class MqttPublishProps {
+    public:
+        // Used in MQTT request-response
+        std::string mResponseTopic;
+        std::vector<uint8_t> mCorrelationData;
 };
 
 }

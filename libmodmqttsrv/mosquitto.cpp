@@ -160,6 +160,20 @@ Mosquitto::publish(const char* topic, int len, const void* data) {
     mosquitto_publish(mMosq, &msgId, topic, len, data, 0, true);
 }
 
+void
+Mosquitto::publish(const char* topic, int len, const void* data, const MqttPublishProps& md) {
+    int msgId;
+    mosquitto_property *proplist = nullptr;
+    if (md.mResponseTopic.size() > 0) {
+        mosquitto_property_add_string(&proplist, MQTT_PROP_RESPONSE_TOPIC, md.mResponseTopic.c_str());
+    }
+    if (md.mCorrelationData.size() > 0) {
+        mosquitto_property_add_binary(&proplist, MQTT_PROP_CORRELATION_DATA, &md.mCorrelationData[0], md.mCorrelationData.size());
+    }
+    mosquitto_publish_v5(mMosq, &msgId, topic, len, data, 0, true, proplist);
+    mosquitto_property_free_all(&proplist);
+}
+
 
 void
 Mosquitto::on_disconnect(int rc) {
