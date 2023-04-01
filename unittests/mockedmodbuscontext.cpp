@@ -12,16 +12,6 @@ const std::chrono::milliseconds MockedModbusContext::sDefaultSlaveWriteTime = st
 
 void
 MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool internalOperation) {
-    write(msg, { msg.mValue }, internalOperation);
-}
-
-void
-MockedModbusContext::Slave::write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation) {
-    write(msg, msg.mValues, internalOperation);
-}
-
-void
-MockedModbusContext::Slave::write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation) {
     if (!internalOperation) {
         std::this_thread::sleep_for(mWriteTime);
         if (mDisconnected) {
@@ -34,7 +24,7 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterMessageBase& msg, c
         }
     }
     int regAddress = msg.mRegisterAddress;
-    for (auto it = values.begin(); it != values.end(); ++it, ++regAddress) {
+    for (auto it = msg.mValues.begin(); it != msg.mValues.end(); ++it, ++regAddress) {
         switch(msg.mRegisterType) {
             case modmqttd::RegisterType::COIL:
                 mCoil[regAddress].mValue = *it == 1;
@@ -170,19 +160,6 @@ MockedModbusContext::init(const modmqttd::ModbusNetworkConfig& config) {
 
 void
 MockedModbusContext::writeModbusRegister(const modmqttd::MsgRegisterValue& msg) {
-    std::unique_lock<std::mutex> lck(mMutex);
-    std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
-
-    if (mInternalOperation)
-        BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
-            << "." << it->second.mId << "." << msg.mRegisterAddress
-            << " WRITE: " << msg.mValue;
-    it->second.write(msg, mInternalOperation);
-    mInternalOperation = false;
-}
-
-void
-MockedModbusContext::writeModbusRegisters(const modmqttd::MsgRegisterRangeValues& msg) {
     std::unique_lock<std::mutex> lck(mMutex);
     std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
 

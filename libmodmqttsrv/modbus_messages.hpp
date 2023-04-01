@@ -29,14 +29,10 @@ class MsgRegisterMessageBase {
 class MsgRegisterValue : public MsgRegisterMessageBase {
     public:
         MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, uint16_t value)
-            : MsgRegisterMessageBase(slaveId, regType, registerAddress),
-              mValue(value) {}
-        uint16_t mValue;
-};
-
-class MsgRegisterRangeValues : public MsgRegisterMessageBase {
-    public:
-        MsgRegisterRangeValues(int slaveId, RegisterType regType, int registerAddress, const std::vector<uint16_t>& values)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress) {
+                mValues.push_back(value);
+              }
+        MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, const std::vector<uint16_t>& values)
             : MsgRegisterMessageBase(slaveId, regType, registerAddress),
               mValues(values) {}
         std::vector<uint16_t> mValues;

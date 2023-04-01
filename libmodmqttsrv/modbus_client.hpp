@@ -34,7 +34,7 @@ class ModbusClient {
         }
 
         void sendCommand(const MqttObjectCommand& cmd, const std::vector<uint16_t>& value) {
-            MsgRegisterRangeValues val(
+            MsgRegisterValue val(
                 cmd.mRegister.mSlaveId,
                 cmd.mRegister.mRegisterType,
                 cmd.mRegister.mRegisterAddress,

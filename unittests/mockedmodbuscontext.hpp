@@ -23,8 +23,6 @@ class MockedModbusContext : public modmqttd::IModbusContext {
             public:
                 Slave(int id = 0) : mId(id) {}
                 void write(const modmqttd::MsgRegisterValue& msg, bool internalOperation = false);
-                void write(const modmqttd::MsgRegisterRangeValues& msg, bool internalOperation = false);
-                void write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation = false);
                 uint16_t read(const modmqttd::BaseRegisterInfo& regData, bool internalOperation = false);
 
                 void setDisconnected(bool flag = true) { mDisconnected = flag; }
@@ -55,7 +53,6 @@ class MockedModbusContext : public modmqttd::IModbusContext {
         virtual uint16_t readModbusRegister(int slaveId, const modmqttd::BaseRegisterInfo& regData);
         virtual std::vector<uint16_t> readModbusRegisters(int slaveId, const modmqttd::BaseRegisterInfo& regData, int count);
         virtual void writeModbusRegister(const modmqttd::MsgRegisterValue& msg);
-        virtual void writeModbusRegisters(const modmqttd::MsgRegisterRangeValues& msg);
 
         Slave& getSlave(int slaveId);
 
