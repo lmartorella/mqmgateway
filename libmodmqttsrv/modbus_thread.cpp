@@ -127,6 +127,18 @@ ModbusThread::processWrite(const MsgRegisterValue& msg) {
 }
 
 void
+ModbusThread::processRead(const MsgRegisterReadRpc& msg) {
+    try {
+        throw std::runtime_error("Not implemented");
+    } catch (const ModbusReadException& ex) {
+        BOOST_LOG_SEV(log, Log::error) << "error reading register "
+            << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
+        MsgRegisterRpcFailed resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps);
+        sendMessage(QueueItem::create(resp));
+    }
+}
+
+void
 ModbusThread::sendStateChange(const MsgRegisterMessageBase& msg, uint16_t stateValue) {
     //send state change immediately if we
     //are polling this register
@@ -164,6 +176,8 @@ ModbusThread::dispatchMessages(const QueueItem& readed) {
             mShouldRun = false;
         } else if (item.isSameAs(typeid(MsgRegisterValue))) {
             processWrite(*item.getData<MsgRegisterValue>());
+        } else if (item.isSameAs(typeid(MsgRegisterReadRpc))) {
+            processRead(*item.getData<MsgRegisterReadRpc>());
         } else if (item.isSameAs(typeid(MsgMqttNetworkState))) {
             std::unique_ptr<MsgMqttNetworkState> netstate(item.getData<MsgMqttNetworkState>());
             mShouldPoll = netstate->mIsUp;

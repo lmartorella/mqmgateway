@@ -42,7 +42,7 @@ class MqttClient {
         //mqtt communication callbacks
         void onDisconnect();
         void onConnect();
-        void onMessage(const char* topic, const void* payload, int payload_len, MqttObjectCommand::PayloadType payloadType);
+        void onMessage(const char* topic, const void* payload, int payload_len, const modmqttd::MqttPublishProps& md);
 
         //for unit tests
         void setMqttImplementation(const std::shared_ptr<IMqttImpl>& impl) { mMqttImpl = impl; }
@@ -56,7 +56,7 @@ class MqttClient {
         MqttBrokerConfig mBrokerConfig;
 
         void checkAvailabilityChange(MqttObject& object, const MqttObjectRegisterIdent& ident, uint16_t value);
-        const MqttObjectCommand& findCommand(const char* topic, MqttObjectCommand::PayloadType payloadType) const;
+        const MqttObjectCommand& findCommand(const char* topic, MqttPublishPayloadType payloadType) const;
 
         std::vector<std::shared_ptr<ModbusClient>> mModbusClients;
 

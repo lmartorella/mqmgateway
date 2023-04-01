@@ -21,24 +21,31 @@ class MockedMqttImpl : public modmqttd::IMqttImpl {
             MqttValue(const void* v, int l) {
                 copyData(v, l);
             }
+            MqttValue(const void* v, int l, modmqttd::MqttPublishProps props) 
+                :mProps(props) {
+                    copyData(v, l);
+                }
             MqttValue(const MqttValue& from) {
                 copyData(from.val, from.len);
+                mProps = from.mProps;
             }
             MqttValue& operator=(const MqttValue& other) {
                 copyData(other.val, other.len);
+                mProps = other.mProps;
                 return *this;
             }
             ~MqttValue() {
                 if (val)
                     free(val);
             }
-            char* val = NULL;
+            uint8_t* val = NULL;
             int len = 0;
+            modmqttd::MqttPublishProps mProps;
         private:
             void copyData(const void* v, int l) {
                 if (val)
                     free(val);
-                val = (char*)malloc(l+1);
+                val = (uint8_t*)malloc(l+1);
                 memcpy(val, v, l);
                 val[l] = '\0';
                 len = l;
@@ -54,7 +61,7 @@ class MockedMqttImpl : public modmqttd::IMqttImpl {
         virtual void subscribe(const char* topic);
         virtual void publish(const char* topic, int len, const void* data);
         virtual void publish(const char* topic, int len, const void* data, const modmqttd::MqttPublishProps& props);
-        void publish(const char* topic, int len, const void* data, modmqttd::MqttObjectCommand::PayloadType payloadType);
+        void publish(const char* topic, int len, const void* data, modmqttd::MqttPublishPayloadType payloadType);
 
         virtual void on_disconnect(int rc);
         virtual void on_connect(int rc);
@@ -65,6 +72,9 @@ class MockedMqttImpl : public modmqttd::IMqttImpl {
         std::string waitForFirstPublish(std::chrono::milliseconds timeout);
         bool hasTopic(const char* topic);
         std::string mqttValue(const char* topic);
+        std::vector<uint8_t> mqttBinaryValue(const char* topic);
+        modmqttd::MqttPublishProps mqttValueProps(const char* topic);
+
         //returns current value on timeout
         std::string waitForMqttValue(const char* topic, const char* expected, std::chrono::milliseconds timeout = std::chrono::seconds(1));
         //clear all topics and simulate broker disconnection

@@ -97,15 +97,15 @@ parseRegisterType(const YAML::Node& data) {
     throw ConfigurationException(data.Mark(), std::string("Unknown register type ") + rtype);
 }
 
-MqttObjectCommand::PayloadType
+MqttPublishPayloadType
 parsePayloadType(const YAML::Node& data) {
     //for future support for int and float mqtt command payload types
     std::string ptype = "string";
     ConfigTools::readOptionalValue<std::string>(ptype, data, "payload_type");
     if (ptype == "string")
-        return MqttObjectCommand::PayloadType::STRING;
+        return MqttPublishPayloadType::STRING;
     if (ptype == "binary")
-        return MqttObjectCommand::PayloadType::BINARY;
+        return MqttPublishPayloadType::BINARY;
     throw ConfigurationException(data.Mark(), std::string("Unknown payload type ") + ptype);
 }
 
@@ -114,7 +114,7 @@ readCommand(const YAML::Node& node, const std::string& default_network, int defa
     std::string name = ConfigTools::readRequiredString(node, "name");
     RegisterConfigName rname(node, default_network, default_slave);
     RegisterType rType = parseRegisterType(node);
-    MqttObjectCommand::PayloadType pType = parsePayloadType(node);
+    MqttPublishPayloadType pType = parsePayloadType(node);
     int size;
     ConfigTools::readOptionalValue<int>(size, node, "size");
     return MqttObjectCommand(
@@ -681,6 +681,10 @@ ModMqtt::processModbusMessages() {
                 std::unique_ptr<MsgRegisterWriteFailed> val(item.getData<MsgRegisterWriteFailed>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
                 mMqtt->processRegisterOperationFailed(ident);
+            } else if (item.isSameAs(typeid(MsgRegisterRpcFailed))) {
+                std::unique_ptr<MsgRegisterRpcFailed> val(item.getData<MsgRegisterRpcFailed>());
+                MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
+                throw std::runtime_error("Not implemented");
             } else if (item.isSameAs(typeid(MsgModbusNetworkState))) {
                 std::unique_ptr<MsgModbusNetworkState> val(item.getData<MsgModbusNetworkState>());
                 mMqtt->processModbusNetworkState(val->mNetworkName, val->mIsUp);

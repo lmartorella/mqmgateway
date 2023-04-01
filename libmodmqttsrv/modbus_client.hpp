@@ -43,6 +43,17 @@ class ModbusClient {
             mToModbusQueue.enqueue(QueueItem::create(val));
         }
 
+        void sendReadCommand(const MqttObjectCommand& cmd, const MqttPublishProps& responseProps) {
+            MsgRegisterReadRpc val(
+                cmd.mRegister.mSlaveId,
+                cmd.mRegister.mRegisterType,
+                cmd.mRegister.mRegisterAddress,
+                cmd.mSize,
+                responseProps
+            );
+            mToModbusQueue.enqueue(QueueItem::create(val));
+        }
+
         void sendMqttNetworkIsUp(bool up) {
             mToModbusQueue.enqueue(QueueItem::create(MsgMqttNetworkState(up)));
         }

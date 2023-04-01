@@ -211,16 +211,25 @@ Mosquitto::on_log(int level, const char* message) {
 void
 Mosquitto::on_message(const struct mosquitto_message *message, const mosquitto_property *props) {
     // Only there for v5 protocol
-    MqttObjectCommand::PayloadType payloadType = MqttObjectCommand::PayloadType::UNKNOWN;
+    MqttPublishProps pubProps;
     if (props != nullptr) {
         char *contentType = nullptr;
         if (mosquitto_property_read_string(props, MQTT_PROP_CONTENT_TYPE, &contentType, false)) {
-            if (std::string(contentType) != "application/octet-stream") {
-                payloadType = MqttObjectCommand::PayloadType::BINARY;
+            if (std::string(contentType) == "application/octet-stream") {
+                pubProps.mPayloadType = MqttPublishPayloadType::BINARY;
             }
         }
+        char *responseTopic = nullptr;
+        if (mosquitto_property_read_string(props, MQTT_PROP_RESPONSE_TOPIC, &responseTopic, false)) {
+            pubProps.mResponseTopic = responseTopic;
+        }
+        uint8_t* correlationBuffer;
+        uint16_t correlationLen;
+        if (mosquitto_property_read_binary(props, MQTT_PROP_CORRELATION_DATA, reinterpret_cast<void**>(&correlationBuffer), &correlationLen, false)) {
+            pubProps.mCorrelationData = std::vector<uint8_t>(correlationBuffer, correlationBuffer + correlationLen);
+        }
     }
-    mOwner->onMessage(message->topic, message->payload, message->payloadlen, payloadType);
+    mOwner->onMessage(message->topic, message->payload, message->payloadlen, pubProps);
 }
 
 const char*

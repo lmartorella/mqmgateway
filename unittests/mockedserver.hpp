@@ -89,8 +89,14 @@ class MockedModMqttServerThread : public ModMqttServerThread {
         mMqtt->publish(topic, value.length(), value.c_str());
     }
 
-    void publishBuffer(const char* topic, const std::vector<uint8_t>& data) {
-        mMqtt->publish(topic, data.size(), &data[0], modmqttd::MqttObjectCommand::PayloadType::BINARY);
+    void publish(const char* topic, const std::vector<uint8_t>& data) {
+        modmqttd::MqttPublishProps props;
+        props.mPayloadType = modmqttd::MqttPublishPayloadType::BINARY;
+        mMqtt->publish(topic, data.size(), &data[0], props);
+    }
+
+    void publish(const char* topic, const std::vector<uint8_t>& data, const modmqttd::MqttPublishProps& props) {
+        mMqtt->publish(topic, data.size(), data.size() > 0 ? &data[0] : nullptr, props);
     }
 
     void waitForMqttValue(const char* topic, const char* expected, std::chrono::milliseconds timeout = std::chrono::milliseconds(100)) {
@@ -102,6 +108,18 @@ class MockedModMqttServerThread : public ModMqttServerThread {
         bool has_topic = mMqtt->hasTopic(topic);
         REQUIRE(has_topic);
         return mMqtt->mqttValue(topic);
+    }
+
+    std::vector<std::uint8_t> mqttBinaryValue(const char* topic) {
+        bool has_topic = mMqtt->hasTopic(topic);
+        REQUIRE(has_topic);
+        return mMqtt->mqttBinaryValue(topic);
+    }
+
+    modmqttd::MqttPublishProps mqttValueProps(const char* topic) {
+        bool has_topic = mMqtt->hasTopic(topic);
+        REQUIRE(has_topic);
+        return mMqtt->mqttValueProps(topic);
     }
 
     void setModbusRegisterValue(const char* network, int slaveId, int regNum, modmqttd::RegisterType regtype, uint16_t val) {

@@ -44,15 +44,10 @@ class MqttObjectRegisterIdent {
 
 class MqttObjectCommand {
     public:
-        enum PayloadType {
-            UNKNOWN = 0,
-            STRING = 1,
-            BINARY = 2
-        };
-        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, PayloadType ptype, int size)
+        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
             : mName(name), mRegister(ident), mPayloadType(ptype), mSize(size) {}
         std::string mName;
-        PayloadType mPayloadType;
+        MqttPublishPayloadType mPayloadType;
         MqttObjectRegisterIdent mRegister;
         int mSize;
 };
@@ -165,13 +160,6 @@ class MqttObject {
         AvailableFlag mIsAvailable = AvailableFlag::NotSet;
 
         void updateAvailablityFlag();
-};
-
-class MqttPublishProps {
-    public:
-        // Used in MQTT request-response
-        std::string mResponseTopic;
-        std::vector<uint8_t> mCorrelationData;
 };
 
 }
