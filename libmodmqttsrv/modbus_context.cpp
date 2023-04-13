@@ -21,6 +21,46 @@ ModbusContext::init(const ModbusNetworkConfig& config)
             config.mStopBit
         );
         modbus_set_error_recovery(mCtx, MODBUS_ERROR_RECOVERY_PROTOCOL);
+
+        int serialMode;
+        switch (config.mRtuSerialMode) {
+            case ModbusNetworkConfig::RtuSerialMode::RS232:
+                serialMode = MODBUS_RTU_RS232;
+                break;
+            case ModbusNetworkConfig::RtuSerialMode::RS485:
+                serialMode = MODBUS_RTU_RS485;
+                break;
+            case ModbusNetworkConfig::RtuSerialMode::UNSPECIFIED:
+            default:
+                serialMode = -1;
+                break;
+        }
+        if (serialMode >= 0 && modbus_rtu_set_serial_mode(mCtx, serialMode)) {
+            throw ModbusContextException("Unable to set RTU serial mode");
+        }
+
+        int rtsMode;
+        switch (config.mRtsMode) {
+            case ModbusNetworkConfig::RtuRtsMode::UP:
+                rtsMode = MODBUS_RTU_RTS_UP;
+                break;
+            case ModbusNetworkConfig::RtuRtsMode::DOWN:
+                rtsMode = MODBUS_RTU_RTS_DOWN;
+                break;
+            case ModbusNetworkConfig::RtuRtsMode::NONE:
+            default:
+                rtsMode = -1;
+                break;
+        }
+        if (rtsMode >= 0 && modbus_rtu_set_rts(mCtx, rtsMode)) {
+            throw ModbusContextException("Unable to set RTS mode");
+        }
+
+        if (config.mRtsDelay > 0) {
+            if (modbus_rtu_set_rts_delay(mCtx, config.mRtsDelay)) {
+                throw ModbusContextException("Unable to set RTS delay");
+            }
+        }
     }
 
     if (mCtx == NULL)
