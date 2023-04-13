@@ -81,7 +81,38 @@ ModbusContext::readModbusRegister(int slaveId, const BaseRegisterInfo& regData) 
 
 std::vector<uint16_t>
 ModbusContext::readModbusRegisters(const MsgRegisterReadRpc& msg) {
-    throw std::runtime_error("Not implemented");
+    if (msg.mSlaveId != 0)
+        modbus_set_slave(mCtx, msg.mSlaveId);
+    else
+        modbus_set_slave(mCtx, MODBUS_TCP_SLAVE);
+
+    std::vector<uint8_t> bits(msg.mSize);
+    std::vector<uint16_t> value(msg.mSize);
+    int retCode;
+    switch(msg.mRegisterType) {
+        case RegisterType::COIL:
+            retCode = modbus_read_bits(mCtx, msg.mRegisterAddress, msg.mSize, &bits[0]);
+            // Convert bytes in short
+            std::copy(bits.begin(), bits.end(), value.begin());
+        break;
+        case RegisterType::BIT:
+            retCode = modbus_read_input_bits(mCtx, msg.mRegisterAddress, msg.mSize, &bits[0]);
+            // Convert bytes in short
+            std::copy(bits.begin(), bits.end(), value.begin());
+        break;
+        case RegisterType::HOLDING:
+            retCode = modbus_read_registers(mCtx, msg.mRegisterAddress, msg.mSize, &value[0]);
+        break;
+        case RegisterType::INPUT:
+            retCode = modbus_read_input_registers(mCtx, msg.mRegisterAddress, msg.mSize, &value[0]);
+        break;
+        default:
+            throw ModbusContextException(std::string("Cannot read, unknown register type ") + std::to_string(msg.mRegisterType));
+    }
+    if (retCode == -1)
+        throw ModbusReadException(std::string("read array fn ") + std::to_string(msg.mRegisterAddress) + " failed");
+
+    return value;
 }
 
 void
