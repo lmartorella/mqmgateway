@@ -317,7 +317,10 @@ MqttClient::processRpcResponse(const MqttObjectRegisterIdent& ident, const MqttP
 
 void 
 MqttClient::processRpcResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error) {
-    throw std::runtime_error("Not implemented");
+    // Override type
+    MqttPublishProps props = responseProps;
+    props.mPayloadType = MqttPublishPayloadType::STRING;
+    mMqttImpl->publish(responseProps.mResponseTopic.c_str(), error.size(), error.c_str(), props);
 }
 
 }

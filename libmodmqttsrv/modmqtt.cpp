@@ -689,7 +689,6 @@ ModMqtt::processModbusMessages() {
                 std::unique_ptr<MsgRegisterRpcError> val(item.getData<MsgRegisterRpcError>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
                 mMqtt->processRpcResponseError(ident, val->mProps, val->mError);
-                throw std::runtime_error("Not implemented");
             } else if (item.isSameAs(typeid(MsgModbusNetworkState))) {
                 std::unique_ptr<MsgModbusNetworkState> val(item.getData<MsgModbusNetworkState>());
                 mMqtt->processModbusNetworkState(val->mNetworkName, val->mIsUp);

@@ -161,6 +161,19 @@ TEST_CASE ("Mqtt binary range read via RPC should work if configured") {
     REQUIRE(server.mqttValueProps("test_switch/read_back").mCorrelationData == std::vector<uint8_t>({ 1, 2, 3, 4 }));
     REQUIRE(server.mqttValueProps("test_switch/read_back").mPayloadType == modmqttd::MqttPublishPayloadType::BINARY);
 
+    // In little endian format
+    server.disconnectModbusSlave("tcptest", 1);
+
+    props.mCorrelationData = { 11, 12 };
+    props.mPayloadType = modmqttd::MqttPublishPayloadType::BINARY;
+    props.mResponseTopic = "test_switch/read_back";
+    server.publish("test_switch/range", { }, props);
+
+    waitForPublish(server, "test_switch/read_back", REGWAIT_MSEC);
+    REQUIRE(server.mqttValue("test_switch/read_back") == "libmodbus: read fn 2 failed: Input/output error");
+    REQUIRE(server.mqttValueProps("test_switch/read_back").mCorrelationData == std::vector<uint8_t>({ 11, 12 }));
+    REQUIRE(server.mqttValueProps("test_switch/read_back").mPayloadType == modmqttd::MqttPublishPayloadType::STRING);
+
     server.stop();
 }
 
