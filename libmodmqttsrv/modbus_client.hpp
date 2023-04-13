@@ -43,6 +43,9 @@ class ModbusClient {
             mToModbusQueue.enqueue(QueueItem::create(val));
         }
 
+        /**
+         * Engage a RPC read call
+         * */
         void sendReadCommand(const MqttObjectCommand& cmd, const MqttPublishProps& responseProps) {
             MsgRegisterReadRpc val(
                 cmd.mRegister.mSlaveId,

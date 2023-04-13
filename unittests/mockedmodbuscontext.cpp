@@ -45,33 +45,33 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool in
 }
 
 uint16_t
-MockedModbusContext::Slave::read(const modmqttd::BaseRegisterInfo& regData, bool internalOperation) {
+MockedModbusContext::Slave::read(int registerAddress, modmqttd::RegisterType registerType, bool internalOperation) {
     if (!internalOperation) {
         std::this_thread::sleep_for(mReadTime);
         if (mDisconnected) {
             errno = EIO;
-            throw modmqttd::ModbusReadException(std::string("read fn ") + std::to_string(regData.mRegister) + " failed");
+            throw modmqttd::ModbusReadException(std::string("read fn ") + std::to_string(registerAddress) + " failed");
         }
-        if (hasError(regData.mRegister, regData.mRegisterType)) {
+        if (hasError(registerAddress, registerType)) {
             errno = EIO;
-            throw modmqttd::ModbusReadException(std::string("register read fn ") + std::to_string(regData.mRegister) + " failed");
+            throw modmqttd::ModbusReadException(std::string("register read fn ") + std::to_string(registerAddress) + " failed");
         }
     }
-    switch(regData.mRegisterType) {
+    switch(registerType) {
         case modmqttd::RegisterType::COIL:
-            return readRegister(mCoil, regData.mRegister);
+            return readRegister(mCoil, registerAddress);
         break;
         case modmqttd::RegisterType::HOLDING:
-            return readRegister(mHolding, regData.mRegister);
+            return readRegister(mHolding, registerAddress);
         break;
         case modmqttd::RegisterType::INPUT:
-            return readRegister(mInput, regData.mRegister);
+            return readRegister(mInput, registerAddress);
         break;
         case modmqttd::RegisterType::BIT:
-            return readRegister(mBit, regData.mRegister);
+            return readRegister(mBit, registerAddress);
         break;
         default:
-            throw modmqttd::ModbusReadException(std::string("Cannot read, unknown register type ") + std::to_string(regData.mRegisterType));
+            throw modmqttd::ModbusReadException(std::string("Cannot read, unknown register type ") + std::to_string(registerType));
     };
 }
 
@@ -138,19 +138,39 @@ uint16_t
 MockedModbusContext::readModbusRegister(int slaveId, const modmqttd::BaseRegisterInfo& regData) {
     std::unique_lock<std::mutex> lck(mMutex);
     std::map<int, Slave>::iterator it = findOrCreateSlave(slaveId);
-    uint16_t ret = it->second.read(regData, mInternalOperation);
+    uint16_t ret = it->second.read(regData.mRegisterAddress, regData.mRegisterType, mInternalOperation);
     if (mInternalOperation)
         BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
-            << "." << it->second.mId << "." << regData.mRegister
-            << " READED: " << ret;
+            << "." << it->second.mId << "." << regData.mRegisterAddress
+            << " READ: " << ret;
 
     mInternalOperation = false;
     return ret;
 }
 
+static std::string toStr(const std::vector<uint16_t>& vec) {
+    std::stringstream str;
+    for (auto it = vec.begin(); it != vec.end(); ++it) {
+        str << (*it) << ", ";
+    }
+    return str.str();
+}
+
 std::vector<uint16_t>
-MockedModbusContext::readModbusRegisters(int slaveId, const modmqttd::BaseRegisterInfo& regData, int count) {
-    throw std::runtime_error("Not implemented");
+MockedModbusContext::readModbusRegisters(const modmqttd::MsgRegisterReadRpc& msg) {
+    std::vector<uint16_t> ret;
+    std::unique_lock<std::mutex> lck(mMutex);
+    std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
+    for (int i = 0; i < msg.mSize; i++) {
+        ret.push_back(it->second.read(msg.mRegisterAddress + i, msg.mRegisterType, mInternalOperation));
+    }
+    if (mInternalOperation)
+        BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
+            << "." << it->second.mId << "." << msg.mRegisterAddress << "[" << msg.mSize << "]"
+            << " READ: " << toStr(ret);
+
+    mInternalOperation = false;
+    return ret;
 }
 
 void
@@ -164,13 +184,9 @@ MockedModbusContext::writeModbusRegister(const modmqttd::MsgRegisterValue& msg) 
     std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
 
     if (mInternalOperation) {
-        std::stringstream str;
-        for (auto it = msg.mValues.begin(); it != msg.mValues.end(); ++it) {
-            str << (*it) << ", ";
-        }
         BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
             << "." << it->second.mId << "." << msg.mRegisterAddress
-            << " WRITE: [" << str.str() << "]";
+            << " WRITE: [" << toStr(msg.mValues) << "]";
     }
     it->second.write(msg, mInternalOperation);
     mInternalOperation = false;

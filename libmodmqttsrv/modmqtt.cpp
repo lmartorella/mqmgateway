@@ -681,9 +681,14 @@ ModMqtt::processModbusMessages() {
                 std::unique_ptr<MsgRegisterWriteFailed> val(item.getData<MsgRegisterWriteFailed>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
                 mMqtt->processRegisterOperationFailed(ident);
-            } else if (item.isSameAs(typeid(MsgRegisterRpcFailed))) {
-                std::unique_ptr<MsgRegisterRpcFailed> val(item.getData<MsgRegisterRpcFailed>());
+            } else if (item.isSameAs(typeid(MsgRegisterRpcResponse))) {
+                std::unique_ptr<MsgRegisterRpcResponse> val(item.getData<MsgRegisterRpcResponse>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
+                mMqtt->processRpcResponse(ident, val->mProps, val->mData);
+            } else if (item.isSameAs(typeid(MsgRegisterRpcError))) {
+                std::unique_ptr<MsgRegisterRpcError> val(item.getData<MsgRegisterRpcError>());
+                MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
+                mMqtt->processRpcResponseError(ident, val->mProps, val->mError);
                 throw std::runtime_error("Not implemented");
             } else if (item.isSameAs(typeid(MsgModbusNetworkState))) {
                 std::unique_ptr<MsgModbusNetworkState> val(item.getData<MsgModbusNetworkState>());

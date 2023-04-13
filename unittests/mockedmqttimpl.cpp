@@ -41,7 +41,7 @@ MockedMqttImpl::publish(const char* topic, int len, const void* data) {
 void
 MockedMqttImpl::publish(const char* topic, int len, const void* data, const modmqttd::MqttPublishProps& md) {
     std::unique_lock<std::mutex> lck(mMutex);
-    MqttValue v(data, len);
+    MqttValue v(data, len, md);
     mTopics[topic] = v;
     std::set<std::string>::const_iterator it = mSubscriptions.find(topic);
     if (it != mSubscriptions.end()) {

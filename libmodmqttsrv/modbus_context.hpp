@@ -20,7 +20,7 @@ class ModbusContext : public IModbusContext {
         virtual bool isConnected() const { return mIsConnected; }
         virtual void disconnect();
         virtual uint16_t readModbusRegister(int slaveId, const BaseRegisterInfo& regData);
-        virtual std::vector<uint16_t> readModbusRegisters(int slaveId, const BaseRegisterInfo& regData, int count);
+        virtual std::vector<uint16_t> readModbusRegisters(const MsgRegisterReadRpc& msg);
         virtual void writeModbusRegister(const MsgRegisterValue& msg);
         virtual ~ModbusContext() {
             modbus_free(mCtx);

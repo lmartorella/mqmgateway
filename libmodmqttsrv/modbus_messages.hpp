@@ -71,8 +71,8 @@ class MsgRegisterReadRpc : public MsgRegisterMessageBase {
  * */
 class MsgRegisterReadFailed : public MsgRegisterMessageBase {
     public:
-        MsgRegisterReadFailed(int slaveId, RegisterType regType, int registerNumber)
-            : MsgRegisterMessageBase(slaveId, regType, registerNumber)
+        MsgRegisterReadFailed(int slaveId, RegisterType regType, int registerAddress)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress)
         {}
 };
 
@@ -81,20 +81,36 @@ class MsgRegisterReadFailed : public MsgRegisterMessageBase {
  * */
 class MsgRegisterWriteFailed : public MsgRegisterMessageBase {
     public:
-        MsgRegisterWriteFailed(int slaveId, RegisterType regType, int registerNumber)
-            : MsgRegisterMessageBase(slaveId, regType, registerNumber)
+        MsgRegisterWriteFailed(int slaveId, RegisterType regType, int registerAddress)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress)
         {}
 };
 
 /**
  * Sent back to close the RPC
  * */
-class MsgRegisterRpcFailed : public MsgRegisterMessageBase {
+class MsgRegisterRpcResponseBase : public MsgRegisterMessageBase {
     public:
-        MsgRegisterRpcFailed(int slaveId, RegisterType regType, int registerNumber, const MqttPublishProps& responseProps)
-            : MsgRegisterMessageBase(slaveId, regType, registerNumber)
+        MsgRegisterRpcResponseBase(int slaveId, RegisterType regType, int registerAddress, const MqttPublishProps& props)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress), mProps(props)
         {}
-    MqttPublishProps mResponseProps;
+    MqttPublishProps mProps;
+};
+
+class MsgRegisterRpcResponse : public MsgRegisterRpcResponseBase {
+    public:
+        MsgRegisterRpcResponse(int slaveId, RegisterType regType, int registerAddress, const MqttPublishProps& responseProps, const std::vector<uint16_t>& data)
+            : MsgRegisterRpcResponseBase(slaveId, regType, registerAddress, responseProps), mData(data)
+        { }
+    std::vector<uint16_t> mData;
+};
+
+class MsgRegisterRpcError : public MsgRegisterRpcResponseBase {
+    public:
+        MsgRegisterRpcError(int slaveId, RegisterType regType, int registerAddress, const MqttPublishProps& responseProps, const std::exception& exc)
+            : MsgRegisterRpcResponseBase(slaveId, regType, registerAddress, responseProps), mError(exc.what())
+        { }
+    std::string mError;
 };
 
 class MsgRegisterPoll {

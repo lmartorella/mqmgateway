@@ -10,9 +10,9 @@ namespace modmqttd {
  * */
 class BaseRegisterInfo {
     public:
-        BaseRegisterInfo(int regNum, RegisterType regType) 
-            :mRegister(regNum), mRegisterType(regType) { }
-        int mRegister;
+        BaseRegisterInfo(int registerAddress, RegisterType regType) 
+            :mRegisterAddress(registerAddress), mRegisterType(regType) { }
+        int mRegisterAddress;
         RegisterType mRegisterType;
 };
 

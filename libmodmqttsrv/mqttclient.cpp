@@ -255,6 +255,8 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
             if (payloadLen == 0) {
                 if (md.mResponseTopic.size() > 0) {
                     (*it)->sendReadCommand(command, md);
+                } else {
+                    BOOST_LOG_SEV(log, Log::error) << "Empty payload for command  " << topic << ", dropping message";
                 }
             } else {
                 std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);
@@ -302,6 +304,20 @@ MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) c
         }
     }
     throw ObjectCommandNotFoundException(topic);
+}
+
+void 
+MqttClient::processRpcResponse(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::vector<uint16_t> data) {
+    if (responseProps.mPayloadType != MqttPublishPayloadType::BINARY) {
+        throw MqttPayloadConversionException(std::string("Cannot send RPC response in format ") + std::to_string(responseProps.mPayloadType));
+    }
+    // Send it in the current endianness format
+    mMqttImpl->publish(responseProps.mResponseTopic.c_str(), data.size() * sizeof(uint16_t), &data[0], responseProps);
+}
+
+void 
+MqttClient::processRpcResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error) {
+    throw std::runtime_error("Not implemented");
 }
 
 }
