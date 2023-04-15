@@ -321,7 +321,7 @@ A list of topics where modbus values are published to MQTT broker and subscribed
 
 For every *state* topic there is another *availability* topic defined by default. If all data from modbus registers needed for *state* is read without errors then by default value "1" is published. If there is any network or device error when polling register data value "0" is published. This is the default behaviour if *availability* section is not defined.
 
-Availablity flag is always published before state value. 
+Availability flag is always published before state value. 
 
 *Availability* section extends this default behaviour by defining a single or list of modbus registers that should be read to check if state data is valid. This could be i.e. some fault indicator or hardware switch state.
 

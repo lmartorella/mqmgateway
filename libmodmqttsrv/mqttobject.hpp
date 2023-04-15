@@ -42,13 +42,27 @@ class MqttObjectRegisterIdent {
         RegisterType mRegisterType;
 };
 
-class MqttObjectCommand {
+class MqttObjectCommandBase {
+    protected:
+        MqttObjectCommandBase(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype)
+            : mName(name), mRegister(ident), mPayloadType(ptype) {}
     public:
-        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
-            : mName(name), mRegister(ident), mPayloadType(ptype), mSize(size) {}
+        virtual ~MqttObjectCommandBase() { }
         std::string mName;
         MqttPublishPayloadType mPayloadType;
         MqttObjectRegisterIdent mRegister;
+};
+
+class MqttObjectCommand : public MqttObjectCommandBase {
+    public:
+        MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype)
+            : MqttObjectCommandBase(name, ident, ptype) {}
+};
+
+class MqttObjectRpc : public MqttObjectCommandBase {
+    public:
+        MqttObjectRpc(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
+            : MqttObjectCommandBase(name, ident, ptype), mSize(size) {}
         int mSize;
 };
 
@@ -149,6 +163,7 @@ class MqttObject {
         bool hasCommand(const std::string& name) const;
 
         std::vector<MqttObjectCommand> mCommands;
+        std::vector<MqttObjectRpc> mRpcs;
         MqttObjectState mState;
         MqttObjectAvailability mAvailability;
 
@@ -159,7 +174,7 @@ class MqttObject {
         std::string mAvailabilityTopic;
         AvailableFlag mIsAvailable = AvailableFlag::NotSet;
 
-        void updateAvailablityFlag();
+        void updateAvailabilityFlag();
 };
 
 }

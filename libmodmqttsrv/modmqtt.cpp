@@ -22,8 +22,7 @@ namespace
   volatile std::sig_atomic_t gSignalStatus = -1;
 }
 
-void signal_handler(int signal)
-{
+static void signal_handler(int signal) {
   gSignalStatus = signal;
   modmqttd::notifyQueues();
 }
@@ -32,9 +31,8 @@ namespace modmqttd {
 
 std::mutex gQueueMutex;
 std::condition_variable gHasMessagesCondition;
-bool gHasMessages = false;
+static bool gHasMessages = false;
 std::shared_ptr<IModbusFactory> ModMqtt::mModbusFactory;
-
 
 class RegisterConfigName {
     public:
@@ -75,15 +73,13 @@ class RegisterConfigName {
         int mRegisterAddress;
 };
 
-void
-notifyQueues() {
+void notifyQueues() {
     std::unique_lock<std::mutex> lock(gQueueMutex);
     gHasMessages = true;
 	gHasMessagesCondition.notify_one();
 }
 
-RegisterType
-parseRegisterType(const YAML::Node& data) {
+static RegisterType parseRegisterType(const YAML::Node& data) {
     std::string rtype = "holding";
     ConfigTools::readOptionalValue<std::string>(rtype, data, "register_type");
     if (rtype == "coil")
@@ -97,8 +93,7 @@ parseRegisterType(const YAML::Node& data) {
     throw ConfigurationException(data.Mark(), std::string("Unknown register type ") + rtype);
 }
 
-MqttPublishPayloadType
-parsePayloadType(const YAML::Node& data) {
+static MqttPublishPayloadType parsePayloadType(const YAML::Node& data) {
     //for future support for int and float mqtt command payload types
     std::string ptype = "string";
     ConfigTools::readOptionalValue<std::string>(ptype, data, "payload_type");
@@ -109,15 +104,30 @@ parsePayloadType(const YAML::Node& data) {
     throw ConfigurationException(data.Mark(), std::string("Unknown payload type ") + ptype);
 }
 
-MqttObjectCommand
-readCommand(const YAML::Node& node, const std::string& default_network, int default_slave) {
+static MqttObjectCommand readCommand(const YAML::Node& node, const std::string& default_network, int default_slave) {
     std::string name = ConfigTools::readRequiredString(node, "name");
     RegisterConfigName rname(node, default_network, default_slave);
     RegisterType rType = parseRegisterType(node);
     MqttPublishPayloadType pType = parsePayloadType(node);
-    int size;
-    ConfigTools::readOptionalValue<int>(size, node, "size");
     return MqttObjectCommand(
+        name,
+        MqttObjectRegisterIdent(
+            rname.mNetworkName,
+            rname.mSlaveId,
+            rType,
+            rname.mRegisterAddress
+            ),
+        pType
+    );
+}
+
+static MqttObjectRpc readRpc(const YAML::Node& node, const std::string& default_network, int default_slave) {
+    std::string name = ConfigTools::readRequiredString(node, "name");
+    RegisterConfigName rname(node, default_network, default_slave);
+    RegisterType rType = parseRegisterType(node);
+    MqttPublishPayloadType pType = parsePayloadType(node);
+    int size = ConfigTools::readRequiredValue<int>(node, "size");
+    return MqttObjectRpc(
         name,
         MqttObjectRegisterIdent(
             rname.mNetworkName,
@@ -471,6 +481,24 @@ ModMqtt::readObjectCommands(
     }
 }
 
+void
+ModMqtt::readObjectRpcs(
+    MqttObject& object,
+    const std::string& default_network,
+    int default_slave,
+    const YAML::Node& rpcs
+) {
+    if (!rpcs.IsDefined())
+        return;
+    if (rpcs.IsMap()) {
+        object.mRpcs.push_back(readRpc(rpcs, default_network, default_slave));
+    } else if (rpcs.IsSequence()) {
+        for(size_t i = 0; i < rpcs.size(); i++) {
+            object.mRpcs.push_back(readRpc(rpcs[i], default_network, default_slave));
+        }
+    }
+}
+
 std::vector<MsgRegisterPollSpecification>
 ModMqtt::initObjects(const YAML::Node& config)
 {
@@ -511,6 +539,7 @@ ModMqtt::initObjects(const YAML::Node& config)
         readObjectState(object, default_network, default_slave, specs_out, currentRefresh, objdata["state"]);
         readObjectAvailability(object, default_network, default_slave, specs_out, currentRefresh, objdata["availability"]);
         readObjectCommands(object, default_network, default_slave, objdata["commands"]);
+        readObjectRpcs(object, default_network, default_slave, objdata["rpcs"]);
 
         if (hasObjectRefresh)
             currentRefresh.pop();

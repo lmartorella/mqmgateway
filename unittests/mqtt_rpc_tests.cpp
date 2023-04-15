@@ -14,7 +14,7 @@ mqtt:
     host: localhost
   objects:
     - topic: test_switch
-      rpc:
+      rpcs:
         - name: range
           register: tcptest.1.2
           register_type: holding
