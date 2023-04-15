@@ -28,15 +28,19 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool in
         switch(msg.mRegisterType) {
             case modmqttd::RegisterType::COIL:
                 mCoil[regAddress].mValue = *it == 1;
+                mCoil[regAddress].mReadCount = 0;
             break;
             case modmqttd::RegisterType::BIT:
                 mBit[regAddress].mValue = *it == 1;
+                mBit[regAddress].mReadCount = 0;
             break;
             case modmqttd::RegisterType::HOLDING:
                 mHolding[regAddress].mValue = *it;
+                mHolding[regAddress].mReadCount = 0;
             break;
             case modmqttd::RegisterType::INPUT:
                 mInput[regAddress].mValue = *it;
+                mInput[regAddress].mReadCount = 0;
             break;
             default:
                 throw modmqttd::ModbusWriteException(std::string("Cannot write, unknown register type ") + std::to_string(msg.mRegisterType));
@@ -59,19 +63,35 @@ MockedModbusContext::Slave::read(int registerAddress, modmqttd::RegisterType reg
     }
     switch(registerType) {
         case modmqttd::RegisterType::COIL:
-            return readRegister(mCoil, registerAddress);
+            return readRegister(mCoil, registerAddress, internalOperation);
         break;
         case modmqttd::RegisterType::HOLDING:
-            return readRegister(mHolding, registerAddress);
+            return readRegister(mHolding, registerAddress, internalOperation);
         break;
         case modmqttd::RegisterType::INPUT:
-            return readRegister(mInput, registerAddress);
+            return readRegister(mInput, registerAddress, internalOperation);
         break;
         case modmqttd::RegisterType::BIT:
-            return readRegister(mBit, registerAddress);
+            return readRegister(mBit, registerAddress, internalOperation);
         break;
         default:
             throw modmqttd::ModbusReadException(std::string("Cannot read, unknown register type ") + std::to_string(registerType));
+    };
+}
+
+int
+MockedModbusContext::Slave::getReadCount(int regNum, modmqttd::RegisterType regType) {
+    switch(regType) {
+        case modmqttd::RegisterType::COIL:
+            return mCoil[regNum].mReadCount;
+        case modmqttd::RegisterType::BIT:
+            return mBit[regNum].mReadCount;
+        case modmqttd::RegisterType::HOLDING:
+            return mHolding[regNum].mReadCount;
+        case modmqttd::RegisterType::INPUT:
+            return mInput[regNum].mReadCount;
+        default:
+            throw modmqttd::ModbusReadException(std::string("Cannot set error, unknown register type ") + std::to_string(regType));
     };
 }
 
@@ -119,10 +139,13 @@ MockedModbusContext::Slave::setError(int regNum, modmqttd::RegisterType regType,
 }
 
 uint16_t
-MockedModbusContext::Slave::readRegister(std::map<int, MockedModbusContext::Slave::RegData>& table, int num) {
+MockedModbusContext::Slave::readRegister(std::map<int, MockedModbusContext::Slave::RegData>& table, int num, bool internalOperation) {
     auto it = table.find(num);
     if (it == table.end())
         return 0;
+    if (!internalOperation) {
+        it->second.mReadCount++;
+    }
     return it->second.mValue;
 }
 
@@ -171,6 +194,12 @@ MockedModbusContext::readModbusRegisters(const modmqttd::MsgRegisterReadRpc& msg
 
     mInternalOperation = false;
     return ret;
+}
+
+int MockedModbusContext::getRegisterReadCount(int slaveId, int registerAddress, modmqttd::RegisterType registerType) {
+    std::unique_lock<std::mutex> lck(mMutex);
+    std::map<int, Slave>::iterator it = findOrCreateSlave(slaveId);
+    return it->second.getReadCount(registerAddress, registerType);
 }
 
 void
@@ -247,6 +276,11 @@ MockedModbusFactory::setModbusRegisterReadError(const char* network, int slaveId
     s.setError(regNum, regType);
 }
 
+int
+MockedModbusFactory::getRegisterReadCount(const char* network, int slaveId, int regNum, modmqttd::RegisterType registerType) {
+    std::shared_ptr<MockedModbusContext> ctx = getOrCreateContext(network);
+    return ctx->getRegisterReadCount(slaveId, regNum, registerType);
+}
 
 void
 MockedModbusFactory::disconnectModbusSlave(const char* network, int slaveId) {

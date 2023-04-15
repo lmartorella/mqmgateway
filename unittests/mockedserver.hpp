@@ -130,6 +130,10 @@ class MockedModMqttServerThread : public ModMqttServerThread {
         return mModbusFactory->getModbusRegisterValue(network, slaveId, regNum, regtype);
     }
 
+    int getModbusRegisterReadCount(const char* network, int slaveId, int regNum, modmqttd::RegisterType regType) {
+        return mModbusFactory->getRegisterReadCount(network, slaveId, regNum, regType);
+    }
+
     void disconnectModbusSlave(const char* network, int slaveId) {
         mModbusFactory->disconnectModbusSlave(network, slaveId);
     }

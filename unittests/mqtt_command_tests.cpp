@@ -99,6 +99,7 @@ modbus:
       port: 501
 mqtt:
   client_id: mqtt_test
+  refresh: 100ms
   broker:
     host: localhost
   objects:
@@ -174,6 +175,11 @@ TEST_CASE ("Mqtt binary range read via RPC should work if configured") {
     REQUIRE(server.mqttValueProps("test_switch/read_back").mCorrelationData == std::vector<uint8_t>({ 11, 12 }));
     REQUIRE(server.mqttValueProps("test_switch/read_back").mPayloadType == modmqttd::MqttPublishPayloadType::STRING);
 
+    // Check that availability and polling are not happening. Wait at least the global configured
+    // refresh time
+    //wait(100ms);
+    REQUIRE(server.getModbusRegisterReadCount("tcptest", 1, 2, modmqttd::RegisterType::HOLDING) == 1);
+    REQUIRE(server.getModbusRegisterReadCount("tcptest", 1, 3, modmqttd::RegisterType::HOLDING) == 1);
     server.stop();
 }
 
