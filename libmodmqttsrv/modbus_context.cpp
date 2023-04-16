@@ -165,26 +165,40 @@ ModbusContext::writeModbusRegister(const MsgRegisterValue& msg) {
     int retCode;
     switch(msg.mRegisterType) {
         case RegisterType::COIL:
-            if (msg.mValues.size() > 1) {
-                std::vector<uint8_t> buffer(msg.mValues.size());
-                std::transform(msg.mValues.begin(), msg.mValues.end(), buffer.begin(), [] (uint16_t v) { return (v == 1 ? TRUE : FALSE); });
-                retCode = modbus_write_bits(mCtx, msg.mRegisterAddress, buffer.size(), &buffer[0]);
-            } else {
-                retCode = modbus_write_bit(mCtx, msg.mRegisterAddress, msg.mValues[0] == 1 ? TRUE : FALSE);
-            }
+            retCode = modbus_write_bit(mCtx, msg.mRegisterAddress, msg.mValue == 1 ? TRUE : FALSE);
         break;
         case RegisterType::HOLDING:
-            if (msg.mValues.size() > 1) {
-                retCode = modbus_write_registers(mCtx, msg.mRegisterAddress, msg.mValues.size(), &msg.mValues[0]);
-            } else {
-                retCode = modbus_write_register(mCtx, msg.mRegisterAddress, msg.mValues[0]);
-            }
+            retCode = modbus_write_register(mCtx, msg.mRegisterAddress, msg.mValue);
         break;
         default:
             throw ModbusContextException(std::string("Cannot write, unknown register type ") + std::to_string(msg.mRegisterType));
     }
     if (retCode == -1)
         throw ModbusWriteException(std::string("write fn ") + std::to_string(msg.mRegisterAddress) + " failed");
+}
+
+void
+ModbusContext::writeModbusRegisters(const MsgRegisterWriteRemoteCall& msg) {
+    if (msg.mSlaveId != 0)
+        modbus_set_slave(mCtx, msg.mSlaveId);
+    else
+        modbus_set_slave(mCtx, MODBUS_TCP_SLAVE);
+
+    int retCode;
+    switch(msg.mRegisterType) {
+        case RegisterType::COIL: {
+            std::vector<uint8_t> buffer(msg.mValues.size());
+            std::transform(msg.mValues.begin(), msg.mValues.end(), buffer.begin(), [] (uint16_t v) { return (v == 1 ? TRUE : FALSE); });
+            retCode = modbus_write_bits(mCtx, msg.mRegisterAddress, buffer.size(), &buffer[0]);
+        } break;
+        case RegisterType::HOLDING:
+            retCode = modbus_write_registers(mCtx, msg.mRegisterAddress, msg.mValues.size(), &msg.mValues[0]);
+        break;
+        default:
+            throw ModbusContextException(std::string("Cannot write array, unknown register type ") + std::to_string(msg.mRegisterType));
+    }
+    if (retCode == -1)
+        throw ModbusWriteException(std::string("write array fn ") + std::to_string(msg.mRegisterAddress) + " failed");
 }
 
 } //namespace

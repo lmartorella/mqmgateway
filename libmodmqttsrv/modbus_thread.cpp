@@ -117,12 +117,26 @@ ModbusThread::processWrite(const MsgRegisterValue& msg) {
     try {
         mModbus->writeModbusRegister(msg);
         // Process one register value only
-        sendStateChange(msg, msg.mValues[0]);
+        sendStateChange(msg, msg.mValue);
     } catch (const ModbusWriteException& ex) {
         BOOST_LOG_SEV(log, Log::error) << "error writing register "
             << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
         MsgRegisterWriteFailed failMsg(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress);
         sendMessage(QueueItem::create(failMsg));
+    }
+}
+
+void
+ModbusThread::processWrite(const MsgRegisterWriteRemoteCall& msg) {
+    try {
+        mModbus->writeModbusRegisters(msg);
+        MsgRegisterRemoteCallResponse resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps);
+        sendMessage(QueueItem::create(resp));
+    } catch (const ModbusWriteException& ex) {
+        BOOST_LOG_SEV(log, Log::error) << "error writing register array "
+            << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
+        MsgRegisterRemoteCallError resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, ex);
+        sendMessage(QueueItem::create(resp));
     }
 }
 
@@ -133,7 +147,7 @@ ModbusThread::processRead(const MsgRegisterReadRemoteCall& msg) {
         MsgRegisterRemoteCallResponse resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, data);
         sendMessage(QueueItem::create(resp));
     } catch (const ModbusReadException& ex) {
-        BOOST_LOG_SEV(log, Log::error) << "error reading register "
+        BOOST_LOG_SEV(log, Log::error) << "error reading register array "
             << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
         MsgRegisterRemoteCallError resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, ex);
         sendMessage(QueueItem::create(resp));
@@ -180,6 +194,8 @@ ModbusThread::dispatchMessages(const QueueItem& readed) {
             processWrite(*item.getData<MsgRegisterValue>());
         } else if (item.isSameAs(typeid(MsgRegisterReadRemoteCall))) {
             processRead(*item.getData<MsgRegisterReadRemoteCall>());
+        } else if (item.isSameAs(typeid(MsgRegisterWriteRemoteCall))) {
+            processWrite(*item.getData<MsgRegisterWriteRemoteCall>());
         } else if (item.isSameAs(typeid(MsgMqttNetworkState))) {
             std::unique_ptr<MsgMqttNetworkState> netstate(item.getData<MsgMqttNetworkState>());
             mShouldPoll = netstate->mIsUp;

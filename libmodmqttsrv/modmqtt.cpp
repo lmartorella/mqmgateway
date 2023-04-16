@@ -706,7 +706,7 @@ ModMqtt::processModbusMessages() {
             if (item.isSameAs(typeid(MsgRegisterValue))) {
                 std::unique_ptr<MsgRegisterValue> val(item.getData<MsgRegisterValue>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);
-                mMqtt->processRegisterValue(ident, val->mValues[0]);
+                mMqtt->processRegisterValue(ident, val->mValue);
             } else if (item.isSameAs(typeid(MsgRegisterReadFailed))) {
                 std::unique_ptr<MsgRegisterReadFailed> val(item.getData<MsgRegisterReadFailed>());
                 MqttObjectRegisterIdent ident((*client)->mName, val->mSlaveId, val->mRegisterType, val->mRegisterAddress);

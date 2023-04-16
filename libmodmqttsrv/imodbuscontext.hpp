@@ -22,6 +22,7 @@ class IModbusContext {
         virtual uint16_t readModbusRegister(int slaveId, const BaseRegisterInfo& regData) = 0;
         virtual std::vector<uint16_t> readModbusRegisters(const MsgRegisterReadRemoteCall& msg) = 0;
         virtual void writeModbusRegister(const MsgRegisterValue& msg) = 0;
+        virtual void writeModbusRegisters(const MsgRegisterWriteRemoteCall& msg) = 0;
         virtual ~IModbusContext() {};
 };
 

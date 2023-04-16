@@ -31,7 +31,15 @@ TEST_CASE ("Mqtt binary range write should work if configured") {
     REQUIRE(server.mqttValue("test_switch/availability") == "disabled");
 
     // In little endian format
-    server.publish("test_switch/range", std::vector<uint8_t>({ 43, 0, 44, 1 }));
+    modmqttd::MqttPublishProps props;
+    props.mCorrelationData = { 1, 2, 3, 4 };
+    props.mPayloadType = modmqttd::MqttPublishPayloadType::BINARY;
+    props.mResponseTopic = "test_switch/ack";
+    server.publish("test_switch/range", std::vector<uint8_t>({ 43, 0, 44, 1 }), props);
+
+    waitForPublish(server, "test_switch/ack", REGWAIT_MSEC);
+    REQUIRE(server.mqttValueProps("test_switch/ack").mCorrelationData == std::vector<uint8_t>({ 1, 2, 3, 4 }));
+
     // But the writing impacted two registers
     REQUIRE(server.getModbusRegisterValue("tcptest", 1, 2, modmqttd::RegisterType::HOLDING) == 43);
     REQUIRE(server.getModbusRegisterValue("tcptest", 1, 3, modmqttd::RegisterType::HOLDING) == 256 + 44);

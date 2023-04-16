@@ -23,7 +23,8 @@ class MockedModbusContext : public modmqttd::IModbusContext {
             };
             public:
                 Slave(int id = 0) : mId(id) {}
-                void write(const modmqttd::MsgRegisterValue& msg, bool internalOperation = false);
+                void write(const modmqttd::MsgRegisterMessageBase& msg, uint16_t value, bool internalOperation = false);
+                void write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation = false);
                 uint16_t read(int registerAddress, modmqttd::RegisterType registerType, bool internalOperation = false);
 
                 int getReadCount(int regNum, modmqttd::RegisterType registerType);
@@ -56,6 +57,7 @@ class MockedModbusContext : public modmqttd::IModbusContext {
         virtual uint16_t readModbusRegister(int slaveId, const modmqttd::BaseRegisterInfo& regData);
         virtual std::vector<uint16_t> readModbusRegisters(const modmqttd::MsgRegisterReadRemoteCall& msg);
         virtual void writeModbusRegister(const modmqttd::MsgRegisterValue& msg);
+        virtual void writeModbusRegisters(const modmqttd::MsgRegisterWriteRemoteCall& msg);
 
         Slave& getSlave(int slaveId);
         int getRegisterReadCount(int slaveId, int registerAddress, modmqttd::RegisterType registerType);

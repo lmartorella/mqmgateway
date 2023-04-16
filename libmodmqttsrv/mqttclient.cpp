@@ -262,13 +262,15 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
             BOOST_LOG_SEV(log, Log::error) << "Modbus network " << network << " not found for command  " << topic << ", dropping message";
         } else {
             if (command.isSameAs(typeid(MqttObjectRemoteCall))) {
-                if (md.mResponseTopic.size() > 0) {
-                    (*it)->sendReadCommand(static_cast<const MqttObjectRemoteCall&>(command), md);
-                } else if (payloadLen > 0) {
-                    std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);
-                    (*it)->sendCommand(command, value);
+                if (md.mResponseTopic.size() == 0) {
+                    BOOST_LOG_SEV(log, Log::error) << "Empty response topic for remote call  " << topic << ", dropping message";
                 } else {
-                    BOOST_LOG_SEV(log, Log::error) << "Empty payload for command  " << topic << ", dropping message";
+                    if (payloadLen == 0) {
+                        (*it)->sendReadCommand(static_cast<const MqttObjectRemoteCall&>(command), md);
+                    } else {
+                        std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);
+                        (*it)->sendWriteCommand(command, value, md);
+                    }
                 }
             } else {
                 std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);

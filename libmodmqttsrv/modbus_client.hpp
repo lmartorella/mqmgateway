@@ -33,12 +33,13 @@ class ModbusClient {
             mToModbusQueue.enqueue(QueueItem::create(val));
         }
 
-        void sendCommand(const MqttObjectCommandBase& cmd, const std::vector<uint16_t>& value) {
-            MsgRegisterValue val(
+        void sendWriteCommand(const MqttObjectCommandBase& cmd, const std::vector<uint16_t>& value, const MqttPublishProps& responseProps) {
+            MsgRegisterWriteRemoteCall val(
                 cmd.mRegister.mSlaveId,
                 cmd.mRegister.mRegisterType,
                 cmd.mRegister.mRegisterAddress,
-                value
+                value,
+                responseProps
             );
             mToModbusQueue.enqueue(QueueItem::create(val));
         }

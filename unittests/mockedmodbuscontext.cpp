@@ -11,7 +11,13 @@ const std::chrono::milliseconds MockedModbusContext::sDefaultSlaveReadTime = std
 const std::chrono::milliseconds MockedModbusContext::sDefaultSlaveWriteTime = std::chrono::milliseconds(10);
 
 void
-MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool internalOperation) {
+MockedModbusContext::Slave::write(const modmqttd::MsgRegisterMessageBase& msg, uint16_t value, bool internalOperation) {
+    std::vector<uint16_t> values = { value };
+    write(msg, values, internalOperation);
+}
+
+void
+MockedModbusContext::Slave::write(const modmqttd::MsgRegisterMessageBase& msg, const std::vector<uint16_t>& values, bool internalOperation) {
     if (!internalOperation) {
         std::this_thread::sleep_for(mWriteTime);
         if (mDisconnected) {
@@ -24,7 +30,7 @@ MockedModbusContext::Slave::write(const modmqttd::MsgRegisterValue& msg, bool in
         }
     }
     int regAddress = msg.mRegisterAddress;
-    for (auto it = msg.mValues.begin(); it != msg.mValues.end(); ++it, ++regAddress) {
+    for (auto it = values.begin(); it != values.end(); ++it, ++regAddress) {
         switch(msg.mRegisterType) {
             case modmqttd::RegisterType::COIL:
                 mCoil[regAddress].mValue = *it == 1;
@@ -215,9 +221,23 @@ MockedModbusContext::writeModbusRegister(const modmqttd::MsgRegisterValue& msg) 
     if (mInternalOperation) {
         BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
             << "." << it->second.mId << "." << msg.mRegisterAddress
+            << " WRITE: " << msg.mValue;
+    }
+    it->second.write(msg, msg.mValue, mInternalOperation);
+    mInternalOperation = false;
+}
+
+void
+MockedModbusContext::writeModbusRegisters(const modmqttd::MsgRegisterWriteRemoteCall& msg) {
+    std::unique_lock<std::mutex> lck(mMutex);
+    std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);
+
+    if (mInternalOperation) {
+        BOOST_LOG_SEV(log, modmqttd::Log::info) << "MODBUS: " << mNetworkName
+            << "." << it->second.mId << "." << msg.mRegisterAddress
             << " WRITE: [" << toStr(msg.mValues) << "]";
     }
-    it->second.write(msg, mInternalOperation);
+    it->second.write(msg, msg.mValues, mInternalOperation);
     mInternalOperation = false;
 }
 

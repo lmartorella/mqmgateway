@@ -49,13 +49,8 @@ class MsgRegisterMessageBase {
 class MsgRegisterValue : public MsgRegisterMessageBase {
     public:
         MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, uint16_t value)
-            : MsgRegisterMessageBase(slaveId, regType, registerAddress) {
-                mValues.push_back(value);
-              }
-        MsgRegisterValue(int slaveId, RegisterType regType, int registerAddress, const std::vector<uint16_t>& values)
-            : MsgRegisterMessageBase(slaveId, regType, registerAddress),
-              mValues(values) {}
-        std::vector<uint16_t> mValues;
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress), mValue(value) { }
+        uint16_t mValue;
 };
 
 class MsgRegisterReadRemoteCall : public MsgRegisterMessageBase {
@@ -63,6 +58,14 @@ class MsgRegisterReadRemoteCall : public MsgRegisterMessageBase {
         MsgRegisterReadRemoteCall(int slaveId, RegisterType regType, int registerAddress, int size, const MqttPublishProps& responseProps)
             : MsgRegisterMessageBase(slaveId, regType, registerAddress), mSize(size), mResponseProps(responseProps) { }
         int mSize;
+        MqttPublishProps mResponseProps;
+};
+
+class MsgRegisterWriteRemoteCall : public MsgRegisterMessageBase {
+    public:
+        MsgRegisterWriteRemoteCall(int slaveId, RegisterType regType, int registerAddress, const std::vector<uint16_t>& values, const MqttPublishProps& responseProps)
+            : MsgRegisterMessageBase(slaveId, regType, registerAddress), mValues(values), mResponseProps(responseProps) { }
+        std::vector<uint16_t> mValues;
         MqttPublishProps mResponseProps;
 };
 
@@ -99,6 +102,9 @@ class MsgRegisterRemoteCallResponseBase : public MsgRegisterMessageBase {
 
 class MsgRegisterRemoteCallResponse : public MsgRegisterRemoteCallResponseBase {
     public:
+        MsgRegisterRemoteCallResponse(int slaveId, RegisterType regType, int registerAddress, const MqttPublishProps& responseProps)
+            : MsgRegisterRemoteCallResponseBase(slaveId, regType, registerAddress, responseProps)
+        { }
         MsgRegisterRemoteCallResponse(int slaveId, RegisterType regType, int registerAddress, const MqttPublishProps& responseProps, const std::vector<uint16_t>& data)
             : MsgRegisterRemoteCallResponseBase(slaveId, regType, registerAddress, responseProps), mData(data)
         { }
