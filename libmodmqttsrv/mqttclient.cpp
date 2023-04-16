@@ -248,10 +248,10 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
         if (it == mModbusClients.end()) {
             BOOST_LOG_SEV(log, Log::error) << "Modbus network " << network << " not found for command  " << topic << ", dropping message";
         } else {
-            const auto* rpcCommand = dynamic_cast<const MqttObjectRpc*>(command);
-            if (rpcCommand != nullptr) {
+            const auto* remoteCallCommand = dynamic_cast<const MqttObjectRemoteCall*>(command);
+            if (remoteCallCommand != nullptr) {
                 if (md.mResponseTopic.size() > 0) {
-                    (*it)->sendReadCommand(*rpcCommand, md);
+                    (*it)->sendReadCommand(*remoteCallCommand, md);
                 } else {
                     BOOST_LOG_SEV(log, Log::error) << "Empty payload for command  " << topic << ", dropping message";
                 }
@@ -301,16 +301,16 @@ MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) c
 }
 
 void 
-MqttClient::processRpcResponse(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::vector<uint16_t> data) {
+MqttClient::processRemoteCallResponse(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::vector<uint16_t> data) {
     if (responseProps.mPayloadType != MqttPublishPayloadType::BINARY) {
-        throw MqttPayloadConversionException(std::string("Cannot send RPC response in format ") + std::to_string(responseProps.mPayloadType));
+        throw MqttPayloadConversionException(std::string("Cannot send Remote Call response in format ") + std::to_string(responseProps.mPayloadType));
     }
     // Send it in the current endianness format
     mMqttImpl->publish(responseProps.mResponseTopic.c_str(), data.size() * sizeof(uint16_t), &data[0], responseProps);
 }
 
 void 
-MqttClient::processRpcResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error) {
+MqttClient::processRemoteCallResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error) {
     // Override type
     MqttPublishProps props = responseProps;
     props.mPayloadType = MqttPublishPayloadType::STRING;

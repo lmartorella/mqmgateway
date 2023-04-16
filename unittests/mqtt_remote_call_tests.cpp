@@ -14,7 +14,7 @@ mqtt:
     host: localhost
   objects:
     - topic: test_switch
-      rpcs:
+      remoteCalls:
         - name: range
           register: tcptest.1.2
           register_type: holding
@@ -40,7 +40,7 @@ TEST_CASE ("Mqtt binary range write should work if configured") {
     server.stop();
 }
 
-TEST_CASE ("Mqtt binary range read via RPC should work if configured") {
+TEST_CASE ("Mqtt binary range read via Remote Call should work if configured") {
     MockedModMqttServerThread server(config_range);
     server.setModbusRegisterValue("tcptest", 1, 2, modmqttd::RegisterType::HOLDING, 42);
     server.setModbusRegisterValue("tcptest", 1, 3, modmqttd::RegisterType::HOLDING, 43);

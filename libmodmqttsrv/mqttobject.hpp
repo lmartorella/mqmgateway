@@ -59,9 +59,9 @@ class MqttObjectCommand : public MqttObjectCommandBase {
             : MqttObjectCommandBase(name, ident, ptype) {}
 };
 
-class MqttObjectRpc : public MqttObjectCommandBase {
+class MqttObjectRemoteCall : public MqttObjectCommandBase {
     public:
-        MqttObjectRpc(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
+        MqttObjectRemoteCall(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
             : MqttObjectCommandBase(name, ident, ptype), mSize(size) {}
         int mSize;
 };
@@ -163,7 +163,7 @@ class MqttObject {
         bool hasCommand(const std::string& name) const;
 
         std::vector<MqttObjectCommand> mCommands;
-        std::vector<MqttObjectRpc> mRpcs;
+        std::vector<MqttObjectRemoteCall> mRemoteCalls;
         MqttObjectState mState;
         MqttObjectAvailability mAvailability;
 

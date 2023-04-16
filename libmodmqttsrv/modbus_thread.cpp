@@ -127,15 +127,15 @@ ModbusThread::processWrite(const MsgRegisterValue& msg) {
 }
 
 void
-ModbusThread::processRead(const MsgRegisterReadRpc& msg) {
+ModbusThread::processRead(const MsgRegisterReadRemoteCall& msg) {
     try {
         std::vector<uint16_t> data = mModbus->readModbusRegisters(msg);
-        MsgRegisterRpcResponse resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, data);
+        MsgRegisterRemoteCallResponse resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, data);
         sendMessage(QueueItem::create(resp));
     } catch (const ModbusReadException& ex) {
         BOOST_LOG_SEV(log, Log::error) << "error reading register "
             << msg.mSlaveId << "." << msg.mRegisterAddress << ": " << ex.what();
-        MsgRegisterRpcError resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, ex);
+        MsgRegisterRemoteCallError resp(msg.mSlaveId, msg.mRegisterType, msg.mRegisterAddress, msg.mResponseProps, ex);
         sendMessage(QueueItem::create(resp));
     }
 }
@@ -178,8 +178,8 @@ ModbusThread::dispatchMessages(const QueueItem& readed) {
             mShouldRun = false;
         } else if (item.isSameAs(typeid(MsgRegisterValue))) {
             processWrite(*item.getData<MsgRegisterValue>());
-        } else if (item.isSameAs(typeid(MsgRegisterReadRpc))) {
-            processRead(*item.getData<MsgRegisterReadRpc>());
+        } else if (item.isSameAs(typeid(MsgRegisterReadRemoteCall))) {
+            processRead(*item.getData<MsgRegisterReadRemoteCall>());
         } else if (item.isSameAs(typeid(MsgMqttNetworkState))) {
             std::unique_ptr<MsgMqttNetworkState> netstate(item.getData<MsgMqttNetworkState>());
             mShouldPoll = netstate->mIsUp;

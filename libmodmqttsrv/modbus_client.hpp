@@ -44,10 +44,10 @@ class ModbusClient {
         }
 
         /**
-         * Engage a RPC read call
+         * Engage a Remote Call read call
          * */
-        void sendReadCommand(const MqttObjectRpc& cmd, const MqttPublishProps& responseProps) {
-            MsgRegisterReadRpc val(
+        void sendReadCommand(const MqttObjectRemoteCall& cmd, const MqttPublishProps& responseProps) {
+            MsgRegisterReadRemoteCall val(
                 cmd.mRegister.mSlaveId,
                 cmd.mRegister.mRegisterType,
                 cmd.mRegister.mRegisterAddress,

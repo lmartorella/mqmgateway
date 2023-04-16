@@ -47,7 +47,7 @@ class ModbusThread {
         void handleRegisterReadError(int slaveId, RegisterPoll& regPoll, const char* errorMessage);
 
         void processWrite(const MsgRegisterValue& msg);
-        void processRead(const MsgRegisterReadRpc& msg);
+        void processRead(const MsgRegisterReadRemoteCall& msg);
         void sendStateChange(const MsgRegisterMessageBase& msg, uint16_t stateValue);
 
         void processCommands();

@@ -54,7 +54,7 @@ class MockedModbusContext : public modmqttd::IModbusContext {
         virtual bool isConnected() const { return mIsConnected; }
         virtual void disconnect() { mIsConnected = false; }
         virtual uint16_t readModbusRegister(int slaveId, const modmqttd::BaseRegisterInfo& regData);
-        virtual std::vector<uint16_t> readModbusRegisters(const modmqttd::MsgRegisterReadRpc& msg);
+        virtual std::vector<uint16_t> readModbusRegisters(const modmqttd::MsgRegisterReadRemoteCall& msg);
         virtual void writeModbusRegister(const modmqttd::MsgRegisterValue& msg);
 
         Slave& getSlave(int slaveId);

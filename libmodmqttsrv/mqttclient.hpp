@@ -38,8 +38,8 @@ class MqttClient {
         void processRegisterOperationFailed(const MqttObjectRegisterIdent& ident);
         void processModbusNetworkState(const std::string& networkName, bool isUp);
         void publishAvailabilityChange(const MqttObject& obj);
-        void processRpcResponse(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::vector<uint16_t> data);
-        void processRpcResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error);
+        void processRemoteCallResponse(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::vector<uint16_t> data);
+        void processRemoteCallResponseError(const MqttObjectRegisterIdent& ident, const MqttPublishProps& responseProps, std::string error);
 
         //mqtt communication callbacks
         void onDisconnect();

@@ -180,7 +180,7 @@ static std::string toStr(const std::vector<uint16_t>& vec) {
 }
 
 std::vector<uint16_t>
-MockedModbusContext::readModbusRegisters(const modmqttd::MsgRegisterReadRpc& msg) {
+MockedModbusContext::readModbusRegisters(const modmqttd::MsgRegisterReadRemoteCall& msg) {
     std::vector<uint16_t> ret;
     std::unique_lock<std::mutex> lck(mMutex);
     std::map<int, Slave>::iterator it = findOrCreateSlave(msg.mSlaveId);

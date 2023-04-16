@@ -120,7 +120,7 @@ ModbusContext::readModbusRegister(int slaveId, const BaseRegisterInfo& regData) 
 }
 
 std::vector<uint16_t>
-ModbusContext::readModbusRegisters(const MsgRegisterReadRpc& msg) {
+ModbusContext::readModbusRegisters(const MsgRegisterReadRemoteCall& msg) {
     if (msg.mSlaveId != 0)
         modbus_set_slave(mCtx, msg.mSlaveId);
     else

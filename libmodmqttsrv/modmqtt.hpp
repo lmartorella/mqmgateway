@@ -64,7 +64,7 @@ class ModMqtt {
         void readObjectStateNode(MqttObject& object, const std::string& default_network, int default_slave, std::vector<MsgRegisterPollSpecification>& specs_out, std::stack<int>& currentRefresh, const std::string& stateName, const YAML::Node& node);
         void readObjectAvailability(MqttObject& object, const std::string& default_network, int default_slave, std::vector<MsgRegisterPollSpecification>& specs_out, std::stack<int>& currentRefresh, const YAML::Node& availability);
         void readObjectCommands(MqttObject& object, const std::string& default_network, int default_slave, const YAML::Node& commands);
-        void readObjectRpcs(MqttObject& object, const std::string& default_network, int default_slave, const YAML::Node& rpcs);
+        void readObjectRemoteCalls(MqttObject& object, const std::string& default_network, int default_slave, const YAML::Node& remoteCalls);
         void processModbusMessages();
 
         bool hasConverterPlugin(const std::string& name) const;

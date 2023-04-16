@@ -32,7 +32,7 @@
 #define AE_ARCH_X64
 #elif defined(_M_IX86) || defined(__i386__)
 #define AE_ARCH_X86
-#elif defined(_M_PPC) || defined(__powerpc__)
+#elif defined(_M_PPC) || defined(__poweremote_call__)
 #define AE_ARCH_PPC
 #else
 #define AE_ARCH_UNKNOWN

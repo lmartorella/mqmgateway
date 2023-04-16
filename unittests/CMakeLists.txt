@@ -11,7 +11,7 @@ add_executable(tests
     mockedmqttimpl.hpp
     mockedserver.hpp
     # tests
-    mqtt_rpc_tests.cpp
+    mqtt_remote_call_tests.cpp
 )
 
 target_link_libraries(tests 
