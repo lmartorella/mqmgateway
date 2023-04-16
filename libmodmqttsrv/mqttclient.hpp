@@ -51,7 +51,7 @@ class MqttClient {
     private:
         std::shared_ptr<IMqttImpl> mMqttImpl;
 
-        void subscribeToCommandTopic(const std::string& objectName, const MqttObjectCommand& cmd);
+        void subscribeToCommandTopic(const std::string& objectName, const MqttObjectCommandBase& cmd);
 
         boost::log::sources::severity_logger<Log::severity> log;
         ModMqtt& mOwner;

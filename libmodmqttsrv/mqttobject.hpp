@@ -15,7 +15,9 @@ namespace modmqttd {
 enum AvailableFlag {
     NotSet = -1,
     False = 0,
-    True = 1
+    True = 1,
+    // Used by RPC
+    Disabled = 2
 };
 
 class MqttObjectRegisterIdent {
@@ -152,6 +154,7 @@ class MqttObjectAvailability : public MqttObjectRegisterHolder<MqttObjectAvailab
     public:
         void addRegister(const MqttObjectRegisterIdent& regIdent, uint16_t availValue);
         AvailableFlag getAvailableFlag() const;
+        bool mIsDisabled = false;
 };
 
 class MqttObject {
@@ -173,13 +176,12 @@ class MqttObject {
         MqttObjectAvailability mAvailability;
 
         void dump() const;
+        void updateAvailabilityFlag();
     private:
         std::string mTopic;
         std::string mStateTopic;
         std::string mAvailabilityTopic;
         AvailableFlag mIsAvailable = AvailableFlag::NotSet;
-
-        void updateAvailabilityFlag();
 };
 
 }

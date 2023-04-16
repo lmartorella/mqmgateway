@@ -20,11 +20,15 @@ mqtt:
           register_type: holding
           payload_type: binary
           size: 2
+      availability: false
 )";
 TEST_CASE ("Mqtt binary range write should work if configured") {
     MockedModMqttServerThread server(config_range);
     server.setModbusRegisterValue("tcptest", 1, 2, modmqttd::RegisterType::HOLDING, 42);
     server.start();
+
+    waitForPublish(server, "test_switch/availability", REGWAIT_MSEC);
+    REQUIRE(server.mqttValue("test_switch/availability") == "disabled");
 
     // In little endian format
     server.publish("test_switch/range", std::vector<uint8_t>({ 43, 0, 44, 1 }));
@@ -45,6 +49,9 @@ TEST_CASE ("Mqtt binary range read via Remote Call should work if configured") {
     server.setModbusRegisterValue("tcptest", 1, 2, modmqttd::RegisterType::HOLDING, 42);
     server.setModbusRegisterValue("tcptest", 1, 3, modmqttd::RegisterType::HOLDING, 43);
     server.start();
+
+    waitForPublish(server, "test_switch/availability", REGWAIT_MSEC);
+    REQUIRE(server.mqttValue("test_switch/availability") == "disabled");
 
     // In little endian format
     modmqttd::MqttPublishProps props;

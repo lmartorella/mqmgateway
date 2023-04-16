@@ -113,16 +113,15 @@ MqttObjectAvailability::addRegister(const MqttObjectRegisterIdent& regIdent, uin
 AvailableFlag
 MqttObjectAvailability::getAvailableFlag() const {
     for(std::map<MqttObjectRegisterIdent, MqttObjectAvailabilityValue>::const_iterator it = mRegisterValues.begin(); it != mRegisterValues.end(); it++) {
-        switch(it->second.getAvailabilityFlag()) {
+        auto flag = it->second.getAvailabilityFlag();
+        switch(flag) {
             case AvailableFlag::NotSet:
-                return AvailableFlag::NotSet;
-            break;
             case AvailableFlag::False:
-                return AvailableFlag::False;
-            break;
+            case AvailableFlag::Disabled:
+                return flag;
+                break;
             case AvailableFlag::True:
                 continue;
-            break;
         }
     }
     return AvailableFlag::True;
@@ -364,18 +363,22 @@ MqttObject::setModbusNetworkState(const std::string& networkName, bool isUp) {
 
 void
 MqttObject::updateAvailabilityFlag() {
-    // if we cannot read availability registers
-    // then assume that state data is invalid
-    if (!mAvailability.isPolling() || !mState.isPolling())
-        mIsAvailable = AvailableFlag::False;
-    else {
-        //we are reading all needed registers, check if
-        //all of them have value
-        if (!mAvailability.hasValue() || !mState.hasValues()) {
-            mIsAvailable = AvailableFlag::NotSet;
-        } else {
-            //we have all values, check avaiabilty registers
-            mIsAvailable = mAvailability.getAvailableFlag();
+    if (mAvailability.mIsDisabled) {
+        mIsAvailable = AvailableFlag::Disabled;
+    } else {
+        // if we cannot read availability registers
+        // then assume that state data is invalid
+        if (mAvailability.mIsDisabled || !mAvailability.isPolling() || !mState.isPolling())
+            mIsAvailable = AvailableFlag::False;
+        else {
+            //we are reading all needed registers, check if
+            //all of them have value
+            if (!mAvailability.hasValue() || !mState.hasValues()) {
+                mIsAvailable = AvailableFlag::NotSet;
+            } else {
+                //we have all values, check availability registers
+                mIsAvailable = mAvailability.getAvailableFlag();
+            }
         }
     }
 }

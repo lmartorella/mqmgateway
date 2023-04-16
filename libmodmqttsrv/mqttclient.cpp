@@ -83,11 +83,14 @@ MqttClient::onDisconnect() {
 
 void
 MqttClient::onConnect() {
-	BOOST_LOG_SEV(log, Log::info) << "Mqtt conected, sending subscriptions...";
+	BOOST_LOG_SEV(log, Log::info) << "Mqtt connected, sending subscriptions...";
 
-    for(std::vector<MqttObject>::const_iterator obj = mObjects.begin(); obj != mObjects.end(); obj++)
-        for(std::vector<MqttObjectCommand>::const_iterator it = obj->mCommands.begin(); it != obj->mCommands.end(); it++)
+    for(std::vector<MqttObject>::const_iterator obj = mObjects.begin(); obj != mObjects.end(); obj++) {
+        for(auto it = obj->mCommands.begin(); it != obj->mCommands.end(); it++)
             subscribeToCommandTopic(obj->getTopic(), *it);
+        for(auto it = obj->mRemoteCalls.begin(); it != obj->mRemoteCalls.end(); it++)
+            subscribeToCommandTopic(obj->getTopic(), *it);
+    }
 
     mConnectionState = State::CONNECTED;
 
@@ -106,7 +109,7 @@ MqttClient::onConnect() {
 }
 
 void
-MqttClient::subscribeToCommandTopic(const std::string& objectTopic, const MqttObjectCommand& cmd) {
+MqttClient::subscribeToCommandTopic(const std::string& objectTopic, const MqttObjectCommandBase& cmd) {
     std::string topic = objectTopic + "/" + cmd.mName;
     mMqttImpl->subscribe(topic.c_str());
 }
@@ -171,11 +174,21 @@ MqttClient::processModbusNetworkState(const std::string& networkName, bool isUp)
 
 void
 MqttClient::publishAvailabilityChange(const MqttObject& obj) {
-    if (obj.getAvailableFlag() == AvailableFlag::NotSet)
-        return;
-    char msg = obj.getAvailableFlag() == AvailableFlag::True ? '1' : '0';
-    int msgId;
-    mMqttImpl->publish(obj.getAvailabilityTopic().c_str(), 1, &msg);
+    std::string msg;
+    switch (obj.getAvailableFlag()) {
+        case AvailableFlag::NotSet:
+            return;
+        case AvailableFlag::False:
+            msg = "0";
+            break;
+        case AvailableFlag::True:
+            msg = "1";
+            break;
+        case AvailableFlag::Disabled:
+            msg = "disabled";
+            break;
+    }
+    mMqttImpl->publish(obj.getAvailabilityTopic().c_str(), msg.size(), msg.c_str());
 }
 
 void

@@ -458,6 +458,11 @@ ModMqtt::readObjectAvailability(
             uint16_t availValue = ConfigTools::readRequiredValue<uint16_t>(availability, "available_value");
             object.mAvailability.addRegister(ident, availValue);
         }
+    } else if (availability.IsScalar() && !availability.as<bool>(true)) {
+        // If explicitly set to false, always send the -1 value (disabled)
+        // Still useful for synchronization
+        object.mAvailability.mIsDisabled = true;
+        object.updateAvailabilityFlag();
     }
 }
 

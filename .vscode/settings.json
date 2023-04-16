@@ -97,5 +97,8 @@
         "cwd": "${cwd}",
         "environment": "${envObjArray}",
         "sourceFileMap": "${sourceFileMapObj}",
-      }    
+    },
+    "cSpell.words": [
+        "mqtt"
+    ]
 }
