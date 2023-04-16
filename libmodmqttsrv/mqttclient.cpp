@@ -237,8 +237,8 @@ static std::vector<uint16_t> convertMqttPayload(const MqttObjectCommand& command
 void
 MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, const modmqttd::MqttPublishProps& md) {
     try {
-        const MqttObjectCommandBase* command = findCommand(topic, md.mPayloadType);
-        const std::string network = command->mRegister.mNetworkName;
+        const MqttObjectCommandBase& command = findCommand(topic, md.mPayloadType);
+        const std::string network = command.mRegister.mNetworkName;
 
         //TODO is is thread safe to iterate on modbus clients from mosquitto callback?
         std::vector<std::shared_ptr<ModbusClient>>::const_iterator it = std::find_if(
@@ -248,17 +248,16 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
         if (it == mModbusClients.end()) {
             BOOST_LOG_SEV(log, Log::error) << "Modbus network " << network << " not found for command  " << topic << ", dropping message";
         } else {
-            const auto* remoteCallCommand = dynamic_cast<const MqttObjectRemoteCall*>(command);
-            if (remoteCallCommand != nullptr) {
+            if (command.isSameAs(typeid(MqttObjectRemoteCall))) {
                 if (md.mResponseTopic.size() > 0) {
-                    (*it)->sendReadCommand(*remoteCallCommand, md);
+                    (*it)->sendReadCommand(static_cast<const MqttObjectRemoteCall&>(command), md);
                 } else {
                     BOOST_LOG_SEV(log, Log::error) << "Empty payload for command  " << topic << ", dropping message";
                 }
             } else {
-                const auto* objectCommand = static_cast<const MqttObjectCommand*>(command);
-                std::vector<uint16_t> value = convertMqttPayload(*objectCommand, payload, payloadLen);
-                (*it)->sendCommand(*objectCommand, value[0]);
+                const MqttObjectCommand& objectCommand = static_cast<const MqttObjectCommand&>(command);
+                std::vector<uint16_t> value = convertMqttPayload(objectCommand, payload, payloadLen);
+                (*it)->sendCommand(objectCommand, value[0]);
             }
         }
     } catch (const MqttPayloadConversionException& ex) {
@@ -268,7 +267,7 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
     }
 }
 
-const MqttObjectCommandBase*
+const MqttObjectCommandBase&
 MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) const {
     std::string objectName;
     std::string commandName;
@@ -294,7 +293,7 @@ MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) c
             if (payloadType != MqttPublishPayloadType::UNSPECIFIED && static_cast<MqttPublishPayloadType>(cmd->mPayloadType) != payloadType) {
                 throw MqttPayloadConversionException(topic);
             }
-            return &(*cmd);
+            return *cmd;
         }
     }
     throw ObjectCommandNotFoundException(topic);

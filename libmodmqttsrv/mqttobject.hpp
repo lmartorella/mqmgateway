@@ -43,26 +43,31 @@ class MqttObjectRegisterIdent {
 };
 
 class MqttObjectCommandBase {
+    private:
+        size_t mTypeHash;
     protected:
-        MqttObjectCommandBase(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype)
-            : mName(name), mRegister(ident), mPayloadType(ptype) {}
+        MqttObjectCommandBase(size_t typeHash, const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype)
+            : mTypeHash(typeHash), mName(name), mRegister(ident), mPayloadType(ptype) {}
     public:
-        virtual ~MqttObjectCommandBase() { }
         std::string mName;
         MqttPublishPayloadType mPayloadType;
         MqttObjectRegisterIdent mRegister;
+
+        bool isSameAs(const std::type_info& type) const {
+            return type.hash_code() == mTypeHash;
+        }
 };
 
 class MqttObjectCommand : public MqttObjectCommandBase {
     public:
         MqttObjectCommand(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype)
-            : MqttObjectCommandBase(name, ident, ptype) {}
+            : MqttObjectCommandBase(typeid(MqttObjectCommand).hash_code(), name, ident, ptype) {}
 };
 
 class MqttObjectRemoteCall : public MqttObjectCommandBase {
     public:
         MqttObjectRemoteCall(const std::string& name, const MqttObjectRegisterIdent& ident, MqttPublishPayloadType ptype, int size)
-            : MqttObjectCommandBase(name, ident, ptype), mSize(size) {}
+            : MqttObjectCommandBase(typeid(MqttObjectRemoteCall).hash_code(), name, ident, ptype), mSize(size) {}
         int mSize;
 };
 

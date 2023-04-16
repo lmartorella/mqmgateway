@@ -58,7 +58,7 @@ class MqttClient {
         MqttBrokerConfig mBrokerConfig;
 
         void checkAvailabilityChange(MqttObject& object, const MqttObjectRegisterIdent& ident, uint16_t value);
-        const MqttObjectCommandBase* findCommand(const char* topic, MqttPublishPayloadType payloadType) const;
+        const MqttObjectCommandBase& findCommand(const char* topic, MqttPublishPayloadType payloadType) const;
 
         std::vector<std::shared_ptr<ModbusClient>> mModbusClients;
 
