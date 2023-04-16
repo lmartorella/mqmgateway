@@ -202,7 +202,7 @@ MqttClient::publishAll() {
 
 static const int MAX_DATA_LEN = 32;
 
-static std::vector<uint16_t> convertMqttPayload(const MqttObjectCommand& command, const void* data, int datalen) {
+static std::vector<uint16_t> convertMqttPayload(const MqttObjectCommandBase& command, const void* data, int datalen) {
     std::vector<uint16_t> ret(1);
     if (datalen > MAX_DATA_LEN)
         throw MqttPayloadConversionException(std::string("Conversion failed, payload too big (size:") + std::to_string(datalen) + ")");
@@ -264,13 +264,15 @@ MqttClient::onMessage(const char* topic, const void* payload, int payloadLen, co
             if (command.isSameAs(typeid(MqttObjectRemoteCall))) {
                 if (md.mResponseTopic.size() > 0) {
                     (*it)->sendReadCommand(static_cast<const MqttObjectRemoteCall&>(command), md);
+                } else if (payloadLen > 0) {
+                    std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);
+                    (*it)->sendCommand(command, value);
                 } else {
                     BOOST_LOG_SEV(log, Log::error) << "Empty payload for command  " << topic << ", dropping message";
                 }
             } else {
-                const MqttObjectCommand& objectCommand = static_cast<const MqttObjectCommand&>(command);
-                std::vector<uint16_t> value = convertMqttPayload(objectCommand, payload, payloadLen);
-                (*it)->sendCommand(objectCommand, value[0]);
+                std::vector<uint16_t> value = convertMqttPayload(command, payload, payloadLen);
+                (*it)->sendCommand(command, value[0]);
             }
         }
     } catch (const MqttPayloadConversionException& ex) {
@@ -298,6 +300,7 @@ MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) c
         [&objectName](const MqttObject& item) -> bool { return item.getTopic() == objectName; }
     );
     if (obj != mObjects.end()) {
+        // Search in commands
         std::vector<MqttObjectCommand>::const_iterator cmd = std::find_if(
             obj->mCommands.begin(), obj->mCommands.end(),
             [&commandName](const MqttObjectCommand& item) -> bool { return item.mName == commandName; }
@@ -307,6 +310,17 @@ MqttClient::findCommand(const char* topic, MqttPublishPayloadType payloadType) c
                 throw MqttPayloadConversionException(topic);
             }
             return *cmd;
+        }
+        // Else search in rpc
+        std::vector<MqttObjectRemoteCall>::const_iterator rpc = std::find_if(
+            obj->mRemoteCalls.begin(), obj->mRemoteCalls.end(),
+            [&commandName](const MqttObjectRemoteCall& item) -> bool { return item.mName == commandName; }
+        );
+        if (rpc != obj->mRemoteCalls.end()) {
+            if (payloadType != MqttPublishPayloadType::UNSPECIFIED && static_cast<MqttPublishPayloadType>(rpc->mPayloadType) != payloadType) {
+                throw MqttPayloadConversionException(topic);
+            }
+            return *rpc;
         }
     }
     throw ObjectCommandNotFoundException(topic);

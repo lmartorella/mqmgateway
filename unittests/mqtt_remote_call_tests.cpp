@@ -14,7 +14,7 @@ mqtt:
     host: localhost
   objects:
     - topic: test_switch
-      remoteCalls:
+      remote_calls:
         - name: range
           register: tcptest.1.2
           register_type: holding
