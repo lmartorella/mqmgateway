@@ -58,7 +58,7 @@ ModbusNetworkConfig::ModbusNetworkConfig(const YAML::Node& source) {
         mStopBit = ConfigTools::readRequiredValue<uint8_t>(source, "stop_bit");
         ConfigTools::readOptionalValue<RtuSerialMode>(this->mRtuSerialMode, source, "rtu_serial_mode");
         ConfigTools::readOptionalValue<RtuRtsMode>(this->mRtsMode, source, "rtu_rts_mode");
-        ConfigTools::readOptionalValue<int>(this->mRtsDelay, source, "rtu_rts_delay");
+        ConfigTools::readOptionalValue<int>(this->mRtsDelayUs, source, "rtu_rts_delay");
     } else if (source["address"]) {
         mType = Type::TCPIP;
         mAddress = ConfigTools::readRequiredString(source, "address");

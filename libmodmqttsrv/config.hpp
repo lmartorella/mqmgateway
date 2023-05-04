@@ -99,7 +99,7 @@ class ModbusNetworkConfig {
                             mStopBit == other.mStopBit &&
                             mRtuSerialMode == other.mRtuSerialMode &&
                             mRtsMode == other.mRtsMode &&
-                            mRtsDelay == other.mRtsDelay;
+                            mRtsDelayUs == other.mRtsDelayUs;
                 break;
                 case TCPIP:
                     return mAddress == other.mAddress && mPort == other.mPort;
@@ -119,7 +119,7 @@ class ModbusNetworkConfig {
         uint8_t mStopBit = 0;
         RtuSerialMode mRtuSerialMode = RtuSerialMode::UNSPECIFIED;
         RtuRtsMode mRtsMode = RtuRtsMode::NONE;
-        int mRtsDelay = 0;
+        int mRtsDelayUs = 0;
         
         //TCP only
         std::string mAddress = "";

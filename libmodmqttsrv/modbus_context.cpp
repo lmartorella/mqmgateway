@@ -56,8 +56,8 @@ ModbusContext::init(const ModbusNetworkConfig& config)
             throw ModbusContextException("Unable to set RTS mode");
         }
 
-        if (config.mRtsDelay > 0) {
-            if (modbus_rtu_set_rts_delay(mCtx, config.mRtsDelay)) {
+        if (config.mRtsDelayUs > 0) {
+            if (modbus_rtu_set_rts_delay(mCtx, config.mRtsDelayUs)) {
                 throw ModbusContextException("Unable to set RTS delay");
             }
         }
