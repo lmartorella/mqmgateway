@@ -115,8 +115,8 @@ class ModbusNetworkConfig {
         std::string mDevice = "";
         int mBaud = 0;
         char mParity = '\0';
-        uint8_t mDataBit = 0;
-        uint8_t mStopBit = 0;
+        int mDataBit = 0;
+        int mStopBit = 0;
         RtuSerialMode mRtuSerialMode = RtuSerialMode::UNSPECIFIED;
         RtuRtsMode mRtsMode = RtuRtsMode::NONE;
         int mRtsDelayUs = 0;
@@ -145,7 +145,8 @@ class MqttBrokerConfig {
         std::string mUsername;
         std::string mPassword;
 
-        std::string mClientId;
+        // Indirectly set if configuration requires version 5
+        bool mUseRpc;
 };
 
 }
