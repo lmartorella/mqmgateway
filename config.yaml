@@ -1,0 +1,37 @@
+modbus:
+  networks:
+    # list of modbus networks to poll from.
+    - name: rtutest
+      # default values for waiting for modbus response
+      # how log to wait for the first byte of a response
+      response_timeout: 500ms
+      # how log to wait for next bytes of a response
+      response_data_timeout: 500ms
+      # if device is defined then this is a ModbusRTU network
+      device: /dev/ttyUSB0
+      # serial port parameters
+      baud: 19200
+      parity: N
+      data_bit: 8
+      stop_bit: 1
+
+      rtu_serial_mode: rs232
+      rtu_rts_mode: down
+      rtu_rts_delay: 1040
+mqtt:
+  client_id: modbus
+  refresh: 1s
+  broker:
+    host: localhost
+  objects:
+    - topic: baro
+      remote_calls:
+        # Test with mosquitto_rr -t baro/read -e test --null-message --property PUBLISH correlation-data xyz
+        name: read
+        register: rtutest.1.1024
+        payload_type: binary
+        register_type: holding
+        size: 11
+
+
+
