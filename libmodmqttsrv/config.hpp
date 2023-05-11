@@ -144,6 +144,9 @@ class MqttBrokerConfig {
         int mKeepalive = 60;
         std::string mUsername;
         std::string mPassword;
+
+        // Indirectly set if configuration requires version 5
+        bool mUseRpc;
 };
 
 }
